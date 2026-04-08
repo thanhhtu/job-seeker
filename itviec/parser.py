@@ -1,19 +1,3 @@
-"""
-parser.py
----------
-Đọc file jobs_raw.json, chuẩn hóa dữ liệu bằng Pydantic v2 và xuất jobs_clean.json.
-
-Cấu trúc raw mỗi record:
-  title, url, crawled_at,
-  job_preview  (text thô: địa chỉ + work_mode + posted_time + skills + expertise + domain)
-  job_detail   (text mô tả công việc)
-  company_info (text thô: tên, rating, type, industry, size, country, working_days, ot_policy)
-
-Thay đổi so với v2:
-  - Không còn field `company` trong JSON đầu vào; tên công ty được trích từ company_info.
-  - Cải thiện logic extract salary: tránh nhầm với funding/revenue/năm/metrics.
-"""
-
 import json
 import logging
 import re
@@ -65,6 +49,7 @@ class CompanyInfo(BaseModel):
 
 
 class JobClean(BaseModel):
+    job_id: Optional[str] = None
     title: str
     company: str
     url: str
@@ -124,6 +109,46 @@ class JobClean(BaseModel):
         if not self.company:
             raise ValueError("Missing company")
         return self
+
+
+# ---------------------------------------------------------------------------
+# Job ID extraction from URL
+# ---------------------------------------------------------------------------
+
+# ITviec URL format:
+#   https://itviec.com/it-jobs/<slug>-<NUMERIC_ID>?lab_feature=...
+#
+# Ví dụ:
+#   …/backend-developer-dosoftpro-4323?lab_feature=preview_jd_page  → "4323"
+#   …/senior-devops-engineer-hanoi-nab-innovation-centre-vietnam-2218 → "2218"
+#   …/business-analyst-upto-1700-product-company-ha-noi-softel-solutions-0116 → "0116"
+#
+# Chiến lược:
+#   1. Bỏ query string / fragment.
+#   2. Lấy path segment cuối cùng (slug cuối).
+#   3. Tách phần số ở cuối slug (sau dấu "-" cuối cùng).
+#   4. Nếu không có số cuối → trả về toàn bộ slug cuối (fallback).
+
+# Pattern: slug kết thúc bằng "-<số 2–10 chữ số>" hoặc "-<chữ+số>"
+# Ưu tiên: số thuần ở cuối slug
+_JOB_ID_SLUG_NUMERIC_SUFFIX = re.compile(r"-([A-Za-z]?\d+)$")
+
+
+def _extract_job_id(url: str) -> Optional[str]:
+    if not url:
+        return None
+
+    clean = url.split("?")[0].split("#")[0].rstrip("/")
+
+    slug = clean.split("/")[-1] if "/" in clean else clean
+    if not slug:
+        return None
+
+    m = _JOB_ID_SLUG_NUMERIC_SUFFIX.search(slug)
+    if m:
+        return f"itviec-{m.group(1)}"
+
+    return f"itviec-{slug}"
 
 
 # ---------------------------------------------------------------------------
@@ -813,9 +838,11 @@ def process_jobs(
 
     for idx, record in enumerate(raw_data, start=1):
         try:
-            title            = record.get("title", "")
-            job_detail       = record.get("job_detail", "")
+            title = record.get("title", "")
+            job_detail = record.get("job_detail", "")
             company_info_raw = record.get("company_info", "")
+
+            job_id = _extract_job_id(record.get("url", ""))
 
             # Trích tên công ty từ company_info (không còn field "company" trong JSON)
             company_name = _extract_company_name(company_info_raw)
@@ -844,6 +871,7 @@ def process_jobs(
             salary         = _extract_salary(title, job_detail)
 
             job = JobClean(
+                job_id       = job_id,
                 title        = title,
                 company      = company_name,
                 url          = record.get("url", ""),
