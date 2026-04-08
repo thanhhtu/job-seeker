@@ -1,6 +1,0 @@
-venv/
-.env/
-__pycache__/
-*.pyc
-
-# Run: venv\Scripts\python parser.py
