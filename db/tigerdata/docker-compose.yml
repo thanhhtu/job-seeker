@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # TigerData (TimescaleDB)
+  tigerdata:
+    image: timescale/timescaledb-ha:pg18
+    container_name: tigerdata_local
+    restart: unless-stopped                   
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TS_TUNE_MEMORY: ${TS_TUNE_MEMORY}        
+      TS_TUNE_NUM_CPUS: ${TS_TUNE_NUM_CPUS}   
+      TIMESCALEDB_TELEMETRY: "off"             
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - tigerdata_pgdata:/var/lib/postgresql/data   
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # pgAdmin 4
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tigerdata_pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      PGADMIN_DEFAULT_PASSWORD: admin123
+
+    ports:
+      - "5050:80"   
+
+    depends_on:
+      tigerdata:
+        condition: service_healthy  
+
+    volumes:
+      - tigerdata_pgadmin:/var/lib/pgadmin   
+
+volumes:
+  tigerdata_pgdata:
+    driver: local
+  tigerdata_pgadmin:
+    driver: local
