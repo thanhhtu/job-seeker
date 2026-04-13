@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 BASE_URL = "https://www.topcv.vn/tim-viec-lam-cong-nghe-thong-tin-cr257"
 HEADLESS = True
-MAX_PAGES = 6           # Number of listing pages to crawl
+MAX_PAGES = 3           # Number of listing pages to crawl
 MAX_JOBS_PER_RUN = 0    # Number of jobs to crawl (0 = all)
 CRAWL_DETAIL = True     # Whether to crawl job detail pages or not
 TIMEOUT_MS = 60000
@@ -274,8 +274,11 @@ async def crawl_topcv() -> list:
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
         )
 
-        page = await context.new_page()
-        page.set_default_timeout(TIMEOUT_MS)
+        list_page = await context.new_page()
+        detail_page = await context.new_page()
+
+        list_page.set_default_timeout(TIMEOUT_MS)
+        detail_page.set_default_timeout(TIMEOUT_MS)
 
         current_page = 1
         jobs_crawled = 0
@@ -284,11 +287,11 @@ async def crawl_topcv() -> list:
             url = _page_url(current_page)
             print(f"\nLoading list page #{current_page}: {url}")
 
-            await page.goto(url, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(3000)
+            await list_page.goto(url, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
+            await list_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await list_page.wait_for_timeout(3000)
 
-            list_jobs = await extract_job_list_data(page)
+            list_jobs = await extract_job_list_data(list_page)
             print(f"Found {len(list_jobs)} jobs on page {current_page}")
 
             # Stop if page returned no jobs (exceeded real page count)
@@ -305,7 +308,7 @@ async def crawl_topcv() -> list:
 
                 if CRAWL_DETAIL and job.get("url"):
                     print(f"  Crawling detail: {job['title'][:60]}...")
-                    detail = await extract_job_detail_data(page, job["url"])
+                    detail = await extract_job_detail_data(detail_page, job["url"])
                     job.update({k: v for k, v in detail.items() if v})
 
                     print(f"  • [{job.get('job_id')}] {job.get('title')}")
