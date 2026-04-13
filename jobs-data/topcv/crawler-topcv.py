@@ -6,26 +6,27 @@ from urllib.parse import urlparse
 BASE_URL = "https://www.topcv.vn/tim-viec-lam-cong-nghe-thong-tin-cr257"
 HEADLESS = True
 MAX_PAGES = 6           # Number of listing pages to crawl
-MAX_JOBS_PER_RUN = 0   # Number of jobs to crawl (0 = all)
+MAX_JOBS_PER_RUN = 0    # Number of jobs to crawl (0 = all)
 CRAWL_DETAIL = True     # Whether to crawl job detail pages or not
 TIMEOUT_MS = 60000
 
 LIST_SELECTORS = {
-    "container":    ".job-list-search-result",
-    "job_item":     ".job-item-search-result",
-    "title":        "h3.title a",
-    "company":      "a.company span.company-name",
-    "salary":       "label.salary span, label.title-salary",
-    "location":     "label.address span.city-text",
-    "experience":   "label.exp span",
-    "next_button":  "a[rel='next'], .pagination a[title='Trang sau']",
+    "container": ".job-list-search-result",
+    "job_item": ".job-item-search-result",
+    "title": "h3.title a",
+    "company": "a.company span.company-name",
+    "salary": "label.salary span, label.title-salary",
+    "location": "label.address span.city-text",
+    "experience": "label.exp span",
 }
 
 DETAIL_SELECTORS = {
-    "job_id": "[data-job-id], .job-id",
     "deadline": "div.job-detail__info--deadline-date",
 
-    "main_experience": "//div[contains(@class, 'section-experience')]//div[contains(@class, 'content-value')]",
+    "main_experience": (
+        "//div[contains(@class, 'section-experience')]"
+        "//div[contains(@class, 'content-value')]"
+    ),
 
     "requirements_tags": (
         ".//div[@class='job-tags__group']"
@@ -95,7 +96,7 @@ DETAIL_SELECTORS = {
         "[.//div[@class='box-general-group-info-title'][contains(text(), 'Học vấn')]]"
         "//div[@class='box-general-group-info-value']"
     ),
-    
+
     "hiring_quantity": (
         ".//div[@class='box-general-group-info']"
         "[.//div[@class='box-general-group-info-title'][contains(text(), 'Số lượng tuyển')]]"
@@ -143,6 +144,13 @@ async def _css_text(page, selector: str):
         return None
     t = (await el.inner_text()).strip()
     return t or None
+
+
+def _page_url(page_num: int) -> str:
+    """Build paginated URL using query string."""
+    if page_num == 1:
+        return BASE_URL
+    return f"{BASE_URL}?page={page_num}"
 
 async def extract_job_list_data(page) -> list:
     jobs = []
@@ -200,7 +208,7 @@ async def extract_job_list_data(page) -> list:
             jobs.append(job)
 
         except Exception as e:
-            print(f"Error extract job #{idx + 1}: {e}")
+            print(f"Error extracting job #{idx + 1}: {e}")
 
     return jobs
 
@@ -221,37 +229,33 @@ async def extract_job_detail_data(page, job_url: str) -> dict:
         except Exception:
             pass
 
-        detail["deadline"] = await _css_text(page, DETAIL_SELECTORS["deadline"])
-
-        main_experience = await _xpath_text(page, DETAIL_SELECTORS["main_experience"])
-        if main_experience:
-            detail["experience"] = main_experience
-
-        detail["requirements_tags"] = await _xpath_texts(page, DETAIL_SELECTORS["requirements_tags"])
-        detail["benefits_tags"] = await _xpath_texts(page, DETAIL_SELECTORS["benefits_tags"])
-        detail["job_expertise"] = await _xpath_texts(page, DETAIL_SELECTORS["job_expertise"])
-        detail["description"] = await _xpath_text(page, DETAIL_SELECTORS["description"])
+        detail["deadline"]            = await _css_text(page, DETAIL_SELECTORS["deadline"])
+        detail["experience"]          = await _xpath_text(page, DETAIL_SELECTORS["main_experience"])
+        detail["requirements_tags"]   = await _xpath_texts(page, DETAIL_SELECTORS["requirements_tags"])
+        detail["benefits_tags"]       = await _xpath_texts(page, DETAIL_SELECTORS["benefits_tags"])
+        detail["job_expertise"]       = await _xpath_texts(page, DETAIL_SELECTORS["job_expertise"])
+        detail["description"]         = await _xpath_text(page, DETAIL_SELECTORS["description"])
         detail["detail_requirements"] = await _xpath_text(page, DETAIL_SELECTORS["detail_requirements"])
-        detail["detail_salary"] = await _xpath_text(page, DETAIL_SELECTORS["detail_salary"])
-        detail["detail_benefit"] = await _xpath_text(page, DETAIL_SELECTORS["detail_benefit"])
-        detail["other_benefits"] = await _xpath_texts(page, DETAIL_SELECTORS["other_benefits"])
-        detail["detail_location"] = await _xpath_text(page, DETAIL_SELECTORS["detail_location"])
-        detail["working_days"] = await _xpath_text(page, DETAIL_SELECTORS["working_days"])
-        detail["job_level"] = await _xpath_text(page, DETAIL_SELECTORS["job_level"])
-        detail["education"] = await _xpath_text(page, DETAIL_SELECTORS["education"])
-        detail["hiring_quantity"] = await _xpath_text(page, DETAIL_SELECTORS["hiring_quantity"])
-        detail["work_mode"] = await _xpath_text(page, DETAIL_SELECTORS["work_mode"])
-        detail["company_name"] = await _xpath_text(page, DETAIL_SELECTORS["company_name"])
-        detail["company_size"] = await _xpath_text(page, DETAIL_SELECTORS["company_size"])
-        detail["company_industry"] = await _xpath_text(page, DETAIL_SELECTORS["company_industry"])
+        detail["detail_salary"]       = await _xpath_text(page, DETAIL_SELECTORS["detail_salary"])
+        detail["detail_benefit"]      = await _xpath_text(page, DETAIL_SELECTORS["detail_benefit"])
+        detail["other_benefits"]      = await _xpath_texts(page, DETAIL_SELECTORS["other_benefits"])
+        detail["detail_location"]     = await _xpath_text(page, DETAIL_SELECTORS["detail_location"])
+        detail["working_days"]        = await _xpath_text(page, DETAIL_SELECTORS["working_days"])
+        detail["job_level"]           = await _xpath_text(page, DETAIL_SELECTORS["job_level"])
+        detail["education"]           = await _xpath_text(page, DETAIL_SELECTORS["education"])
+        detail["hiring_quantity"]     = await _xpath_text(page, DETAIL_SELECTORS["hiring_quantity"])
+        detail["work_mode"]           = await _xpath_text(page, DETAIL_SELECTORS["work_mode"])
+        detail["company_name"]        = await _xpath_text(page, DETAIL_SELECTORS["company_name"])
+        detail["company_size"]        = await _xpath_text(page, DETAIL_SELECTORS["company_size"])
+        detail["company_industry"]    = await _xpath_text(page, DETAIL_SELECTORS["company_industry"])
 
         return detail
 
     except PlaywrightTimeout:
-        print(f"Timeout khi crawl detail: {job_url}")
+        print(f"Timeout crawling detail: {job_url}")
         return {"url": job_url, "error": "timeout"}
     except Exception as e:
-        print(f"Lỗi crawl detail {job_url}: {e}")
+        print(f"Error crawling detail {job_url}: {e}")
         return {"url": job_url, "error": str(e)}
 
 async def crawl_topcv() -> list:
@@ -277,18 +281,20 @@ async def crawl_topcv() -> list:
         jobs_crawled = 0
 
         while True:
-            print(f"\nLoading list page #{current_page}...")
+            url = _page_url(current_page)
+            print(f"\nLoading list page #{current_page}: {url}")
 
-            await page.goto(
-                BASE_URL if current_page == 1 else page.url,
-                wait_until="domcontentloaded",
-                timeout=TIMEOUT_MS,
-            )
+            await page.goto(url, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             await page.wait_for_timeout(3000)
 
             list_jobs = await extract_job_list_data(page)
             print(f"Found {len(list_jobs)} jobs on page {current_page}")
+
+            # Stop if page returned no jobs (exceeded real page count)
+            if not list_jobs:
+                print("No jobs found on this page, stopping.")
+                break
 
             for job in list_jobs:
                 if MAX_JOBS_PER_RUN > 0 and jobs_crawled >= MAX_JOBS_PER_RUN:
@@ -298,9 +304,8 @@ async def crawl_topcv() -> list:
                 jobs_crawled += 1
 
                 if CRAWL_DETAIL and job.get("url"):
-                    print(f"Crawling detail: {job['title'][:60]}...")
+                    print(f"  Crawling detail: {job['title'][:60]}...")
                     detail = await extract_job_detail_data(page, job["url"])
-
                     job.update({k: v for k, v in detail.items() if v})
 
                     print(f"  • [{job.get('job_id')}] {job.get('title')}")
@@ -309,22 +314,14 @@ async def crawl_topcv() -> list:
 
                     await asyncio.sleep(2)
 
-                if MAX_JOBS_PER_RUN > 0 and jobs_crawled >= MAX_JOBS_PER_RUN:
-                    break
-
             if MAX_JOBS_PER_RUN > 0 and jobs_crawled >= MAX_JOBS_PER_RUN:
+                print(f"Reached MAX_JOBS_PER_RUN ({MAX_JOBS_PER_RUN}), stopping.")
                 break
+
             if MAX_PAGES > 0 and current_page >= MAX_PAGES:
+                print(f"Reached MAX_PAGES ({MAX_PAGES}), stopping.")
                 break
 
-            next_btn = await page.query_selector(LIST_SELECTORS["next_button"])
-            if not next_btn:
-                print("No more pages")
-                break
-
-            await next_btn.scroll_into_view_if_needed()
-            await page.wait_for_timeout(1000)
-            await next_btn.click()
             current_page += 1
             await asyncio.sleep(2)
 
@@ -332,13 +329,15 @@ async def crawl_topcv() -> list:
 
     return all_jobs
 
+
 def save_to_json(jobs: list, filename: str = "topcv_jobs.json") -> None:
     if not jobs:
-        print("No data to save")
+        print("No data to save.")
         return
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(jobs, f, ensure_ascii=False, indent=2)
     print(f"Saved {len(jobs)} jobs → {filename}")
+
 
 async def main():
     print("Starting TopCV crawler (list + detail)...")
@@ -346,9 +345,9 @@ async def main():
 
     if jobs:
         save_to_json(jobs)
-        print(f"\nDone! Crawled {len(jobs)} jobs")
+        print(f"\nDone! Crawled {len(jobs)} jobs.")
     else:
-        print("\nNo data. Try HEADLESS=False to debug")
+        print("\nNo data. Try setting HEADLESS=False to debug.")
 
 
 if __name__ == "__main__":
