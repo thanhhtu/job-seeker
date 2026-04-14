@@ -7,12 +7,18 @@ from typing import Optional
 from scrapy.crawler import CrawlerProcess
 from scrapy_playwright.page import PageMethod
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_URL = "https://itviec.com/it-jobs"
 HEADLESS = True
 MAX_PAGES = 2
 MAX_JOBS_PER_RUN = 0
-OUTPUT_FILE = "data/itviec_jobs.json"
+OUTPUT_FILE = "data/topcv_jobs.json"
+
+ITVIEC_EMAIL = os.getenv("ITVIEC_EMAIL")
+ITVIEC_PASSWORD = os.getenv("ITVIEC_PASSWORD")
 
 _JOB_ID_RE = re.compile(r"-([A-Za-z]?\d+)$")
 
@@ -50,7 +56,7 @@ class ItViecSpider(scrapy.Spider):
     name = "itviec_spider"
     
     def __init__(self, *args, **kwargs):
-        super(ItViecSpider, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.spawned_count = 0
 
     custom_settings = {
@@ -63,25 +69,67 @@ class ItViecSpider(scrapy.Spider):
             "headless": HEADLESS,
             "args": ["--disable-blink-features=AutomationControlled"]
         },
+        
+        "PLAYWRIGHT_BROWSER_TYPE": "chromium",
+        "PLAYWRIGHT_CONTEXTS": {
+            "default": {
+                "ignore_https_errors": True,
+            }
+        },
         "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "CONCURRENT_REQUESTS": 2,
         "DOWNLOAD_DELAY": 2,
         "CLOSESPIDER_ITEMCOUNT": MAX_JOBS_PER_RUN if MAX_JOBS_PER_RUN > 0 else 0,
         "LOG_LEVEL": "INFO",
     }
-
+    
     def start_requests(self):
-        for page in range(1, MAX_PAGES + 1):
-            url = f"{BASE_URL}?page={page}"
+        yield scrapy.Request(
+            url="https://itviec.com/sign_in",
+            meta={
+                "playwright": True,
+                "playwright_include_page": True,
+                "playwright_context": "default",        
+                "playwright_page_methods": [
+                    PageMethod("wait_for_selector", "input[name='user[email]']"),
+                ],
+            },
+            callback=self.do_login,
+            dont_filter=True,
+        )
+
+    async def do_login(self, response):
+        page = response.meta["playwright_page"]
+
+        await page.fill("input[name='user[email]']", ITVIEC_EMAIL)
+        await page.fill("input[name='user[password]']", ITVIEC_PASSWORD)
+        await page.click("button.ibtn-primary[type='submit']")
+
+        # Chờ load xong (không dùng networkidle)
+        await page.wait_for_load_state("load", timeout=15000)
+
+        current_url = page.url
+        self.logger.info(f"After login URL: {current_url}")
+
+        if "sign_in" in current_url:
+            self.logger.error("Login failed! Check credentials or CAPTCHA.")
+            return
+
+        self.logger.info("Login successful!")
+
+        for p in range(1, MAX_PAGES + 1):
+            url = f"{BASE_URL}?page={p}"
             yield scrapy.Request(
                 url=url,
                 meta={
                     "playwright": True,
+                    "playwright_context": "default",
                     "playwright_page_methods": [
                         PageMethod("wait_for_selector", "h3[data-search--job-selection-target='jobTitle']"),
                     ],
                 },
-                callback=self.parse_list
+                callback=self.parse_list,
+                dont_filter=True,
             )
 
     async def parse_list(self, response):
@@ -100,6 +148,7 @@ class ItViecSpider(scrapy.Spider):
                     url=full_url,
                     meta={
                         "playwright": True,
+                        "playwright_context": "default", 
                         "playwright_page_methods": [
                             PageMethod("evaluate", "window.scrollTo(0, 500)"),
                             PageMethod("wait_for_selector", ".job-show-info", timeout=20000),
@@ -117,7 +166,13 @@ class ItViecSpider(scrapy.Spider):
         
         raw_posted_at = info_container.xpath(".//svg[use[contains(@href, 'clock')]]/following-sibling::span/text()").get(default="").strip().replace("Posted", "").strip()
         crawled_now = datetime.utcnow()
-        
+
+        salary_raw = (
+            response.xpath("string(//div[@class='job-header-info']//div[contains(@class,'salary')])")
+            .get(default="").strip()
+        )
+        salary = salary_raw if salary_raw and "sign in" not in salary_raw.lower() else "unavailable"
+
         item = {
             "job_id": _extract_job_id(response.url),
             "job_url": response.url,
