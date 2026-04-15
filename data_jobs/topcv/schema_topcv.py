@@ -1,0 +1,350 @@
+import re
+import json
+import unicodedata
+from typing import List, Optional, Any
+from datetime import datetime, date
+from pathlib import Path
+from pydantic import BaseModel, Field, field_validator, ConfigDict, model_validator
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder for datetime and date objects"""
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
+
+# --- Location Mapping ---
+LOCATION_MAPPING = {
+    "ha_noi": ["Hà Nội", "Ha Noi", "ha noi", "Hanoi", "hanoi"],
+    "tuyen_quang": ["Tuyên Quang", "Tuyen Quang", "tuyen quang", "Hà Giang", "Ha Giang", "ha giang"],
+    "lao_cai": ["Lào Cai", "Lao Cai", "lao cai", "Yên Bái", "Yen Bai", "yen bai"],
+    "thai_nguyen": ["Thái Nguyên", "Thai Nguyen", "thai nguyen", "Bắc Kạn", "Bac Kan", "bac kan"],
+    "phu_tho": ["Phú Thọ", "Phu Tho", "phu tho", "Vĩnh Phúc", "Vinh Phuc", "vinh phuc", "Hòa Bình", "Hoa Binh", "hoa binh"],
+    "bac_ninh": ["Bắc Ninh", "Bac Ninh", "bac ninh", "Bắc Giang", "Bac Giang", "bac giang"],
+    "hung_yen": ["Hưng Yên", "Hung Yen", "hung yen", "Thái Bình", "Thai Binh", "thai binh"],
+    "hai_phong": ["Hải Phòng", "Hai Phong", "hai phong", "Hải Dương", "Hai Duong", "hai duong"],
+    "ninh_binh": ["Ninh Bình", "Ninh Binh", "ninh binh", "Nam Định", "Nam Dinh", "nam dinh", "Hà Nam", "Ha Nam", "ha nam"],
+    "quang_tri": ["Quảng Trị", "Quang Tri", "quang tri", "Quảng Bình", "Quang Binh", "quang binh"],
+    "da_nang": ["Đà Nẵng", "Da Nang", "da nang", "ĐàNẵng", "DaNang", "danang", "Quảng Nam", "Quang Nam", "quang nam"],
+    "quang_ngai": ["Quảng Ngãi", "Quang Ngai", "quang ngai", "Kon Tum", "Kontum", "kon tum", "kontum"],
+    "gia_lai": ["Gia Lai", "gia lai", "Bình Định", "Binh Dinh", "binh dinh"],
+    "khanh_hoa": ["Khánh Hòa", "Khanh Hoa", "khanh hoa", "Ninh Thuận", "Ninh Thuan", "ninh thuan"],
+    "lam_dong": ["Lâm Đồng", "Lam Dong", "lam dong", "Đắk Nông", "Dak Nong", "dak nong"],
+    "dak_lak": ["Đắk Lắk", "Dak Lak", "dak lak", "Phú Yên", "Phu Yen", "phu yen"],
+    "ho_chi_minh": ["TP. Hồ Chí Minh", "Ho Chi Minh", "ho chi minh", "TPHCM", "tp hcm", "tphcm", "Sài Gòn", "Sai Gon", "saigon", "Bình Dương", "Binh Duong", "binh duong", "Bà Rịa Vũng Tàu", "Ba Ria Vung Tau", "ba ria vung tau", "BRVT", "Vũng Tàu", "Vung Tau", "vung tau"],
+    "dong_nai": ["Đồng Nai", "Dong Nai", "dong nai", "Bình Phước", "Binh Phuoc", "binh phuoc"],
+    "tay_ninh": ["Tây Ninh", "Tay Ninh", "tay ninh", "Long An", "long an"],
+    "can_tho": ["Cần Thơ", "Can Tho", "can tho", "Sóc Trăng", "Soc Trang", "soc trang", "Hậu Giang", "Hau Giang", "hau giang"],
+    "vinh_long": ["Vĩnh Long", "Vinh Long", "vinh long", "Bến Tre", "Ben Tre", "ben tre", "Trà Vinh", "Tra Vinh", "tra vinh"],
+    "dong_thap": ["Đồng Tháp", "Dong Thap", "dong thap", "Tiền Giang", "Tien Giang", "tien giang"],
+    "ca_mau": ["Cà Mau", "Ca Mau", "ca mau", "Bạc Liêu", "Bac Lieu", "bac lieu"],
+    "an_giang": ["An Giang", "an giang", "Kiên Giang", "Kien Giang", "kien giang"]
+}
+
+def denormalize_text(text: str) -> str:
+    if not text: return ""
+    text = unicodedata.normalize('NFD', text)
+    text = ''.join([c for c in text if unicodedata.category(c) != 'Mn'])
+    text = text.replace('đ', 'd').replace('Đ', 'd')
+    return text.lower()
+
+def map_to_standard_region(raw_location: str) -> Optional[str]:
+    clean_input = denormalize_text(raw_location)
+    for standard_name, aliases in LOCATION_MAPPING.items():
+        for alias in aliases:
+            if denormalize_text(alias) in clean_input:
+                return standard_name
+    return None
+
+class JobSchema(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')
+
+    job_id: str
+    source: str = "topcv"
+    url: str = ""
+    title: str = "No Title"
+    company_name: str = "Unknown"
+    company_size: Optional[str] = None
+    company_industry: Optional[str] = None
+    
+    salary_raw: Optional[str] = Field(None, alias="salary")
+    salary_min: int = 0
+    salary_max: int = 0
+    salary_currency: Optional[str] = None
+    salary_negotiable: bool = False
+    
+    location_raw: Optional[str] = Field(None, alias="location")
+    locations: List[str] = Field(default_factory=list)
+    work_mode: str = "onsite"
+    country: Optional[str] = None
+    
+    job_level: Optional[str] = None
+    experience_years_min: int = 0
+    education: Optional[str] = None
+    work_mode_days: Optional[str] = None
+    overtime_policy: Optional[str] = None
+    hiring_quantity: int = 1
+    
+    deadline: Optional[date] = None
+    posted_at: Optional[datetime] = Field(None, alias="posted_datetime")
+    
+    skills: List[str] = Field(default_factory=list)
+    job_domains: List[str] = Field(default_factory=list)
+    description: str = ""
+    requirements: Optional[str] = None
+    benefits: Optional[str] = None
+
+    @field_validator("work_mode", mode="before")
+    @classmethod
+    def normalize_work_mode(cls, v: Any) -> str:
+        s = str(v).lower() if v else "onsite"
+        if re.search(r'\b(hybrid|linh.?hoat|ban.?thoi.?gian)\b', s): return "hybrid"
+        if re.search(r'\b(remote|tu.?xa|wfh|work.?from.?home|o.?nha)\b', s): return "remote"
+        return "onsite"
+
+    @field_validator("locations", mode="before")
+    @classmethod
+    def handle_location_mapping(cls, v: Any, info: Any) -> List[str]:
+        # Lấy trực tiếp từ 'location' (key của input mẫu)
+        raw = str(v) if v else str(info.data.get("location", ""))
+        # Split by multiple separators: comma, pipe, semicolon, dash, ampersand
+        parts = re.split(r'[,|;\-&]', raw)
+        mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
+        # Remove duplicates while preserving order
+        seen = set()
+        result = []
+        for m in mapped:
+            if m and m not in seen:
+                result.append(m)
+                seen.add(m)
+        return result
+    
+    @model_validator(mode="before")
+    def parse_salary_fields(self) -> dict:
+        # Parse salary_raw to extract min and max values and currency
+        salary_raw = str(self.get("salary") or self.get("salary_raw") or "")
+        if salary_raw and "thoa thuan" not in salary_raw.lower() and "negotiable" not in salary_raw.lower():
+            try:
+                # Extract numbers with optional commas
+                numbers = re.findall(r'[\d,]+', salary_raw)
+                if numbers:
+                    # Clean numbers (remove commas and convert to int)
+                    cleaned_nums = [int(num.replace(',', '')) for num in numbers]
+                    if cleaned_nums:
+                        self["salary_min"] = min(cleaned_nums)
+                        self["salary_max"] = max(cleaned_nums)
+                
+                # Extract currency unit
+                # Match USD, VND, EUR, etc. or Vietnamese units like triệu, nghìn
+                currency_match = re.search(r'(USD|VND|EUR|GBP|JPY|triệu|ngh\w+n|\$|€|¥|₹)', salary_raw, re.IGNORECASE)
+                if currency_match:
+                    currency = currency_match.group(1).lower()
+                    # Normalize Vietnamese currency
+                    if currency == "triệu" or currency == "triệu":
+                        self["salary_currency"] = "VND (million)"
+                    elif "ngh" in currency:
+                        self["salary_currency"] = "VND (thousand)"
+                    elif currency == "$":
+                        self["salary_currency"] = "USD"
+                    elif currency == "€":
+                        self["salary_currency"] = "EUR"
+                    elif currency == "¥":
+                        self["salary_currency"] = "JPY"
+                    else:
+                        self["salary_currency"] = currency.upper()
+            except:
+                pass
+        return self
+    
+    @model_validator(mode="before")
+    def map_topcv_fields(self) -> dict:
+        # Map TopCV specific fields to schema fields
+        if "company" in self and "company_name" not in self:
+            self["company_name"] = self["company"]
+        if "working_days" in self and "work_mode_days" not in self:
+            self["work_mode_days"] = self["working_days"]
+        
+        # Extract job_level from job_expertise or job_level field
+        if "job_expertise" in self and isinstance(self["job_expertise"], list) and self["job_expertise"]:
+            if "job_level" not in self or not self["job_level"]:
+                self["job_level"] = str(self["job_expertise"][0]).lower()
+            # Also populate job_domains with all job_expertise items
+            if "job_domains" not in self or not self["job_domains"]:
+                self["job_domains"] = [str(exp).lower() for exp in self["job_expertise"]]
+        elif "job_level" in self and self["job_level"]:
+            self["job_level"] = str(self["job_level"]).lower()
+        
+        # Extract experience_years_min from experience field
+        if "experience" in self and "experience_years_min" not in self:
+            exp_str = str(self.get("experience", "")).lower()
+            try:
+                if "năm" in exp_str:
+                    # Extract number from "3 năm", "2 năm", etc.
+                    nums = re.findall(r'\d+', exp_str)
+                    if nums:
+                        self["experience_years_min"] = int(nums[0])
+            except:
+                pass
+        
+        # Parse hiring_quantity
+        if "hiring_quantity" in self and self["hiring_quantity"]:
+            qty_str = str(self["hiring_quantity"]).lower()
+            if "người" in qty_str or "person" in qty_str:
+                try:
+                    nums = re.findall(r'\d+', qty_str)
+                    if nums:
+                        self["hiring_quantity"] = int(nums[0])
+                except:
+                    pass
+        
+        # Merge detail_requirements into requirements
+        if "detail_requirements" in self and self["detail_requirements"]:
+            if "requirements" not in self or not self["requirements"]:
+                self["requirements"] = self["detail_requirements"]
+            else:
+                self["requirements"] = str(self["requirements"]) + "\n" + str(self["detail_requirements"])
+        
+        # Merge detail_benefit into benefits
+        if "detail_benefit" in self and self["detail_benefit"]:
+            if "benefits" not in self or not self["benefits"]:
+                self["benefits"] = self["detail_benefit"]
+            else:
+                self["benefits"] = str(self["benefits"]) + "\n" + str(self["detail_benefit"])
+        
+        # Prioritize detail_location or detail_locations for location_raw
+        # Note: must rename "location" to "location_raw" to avoid alias overwriting
+        if "detail_location" in self and self["detail_location"]:
+            if "location" in self:
+                del self["location"]  # Remove so alias doesn't overwrite
+            self["location_raw"] = self["detail_location"]
+        elif "detail_locations" in self and self["detail_locations"]:
+            if "location" in self:
+                del self["location"]  # Remove so alias doesn't overwrite
+            self["location_raw"] = self["detail_locations"]
+        elif "location" in self and self["location"]:
+            # Rename location to location_raw using alias
+            self["location_raw"] = self["location"]
+            del self["location"]
+        
+        # Append requirements_tags to requirements if available
+        if "requirements_tags" in self and isinstance(self["requirements_tags"], list) and self["requirements_tags"]:
+            tags_str = " | ".join(self["requirements_tags"])
+            if self.get("requirements"):
+                self["requirements"] = str(self["requirements"]) + f"\n\n[Others: {tags_str}]"
+            else:
+                self["requirements"] = f"[Others: {tags_str}]"
+        
+        # Append benefits_tags to benefits
+        if "benefits_tags" in self and isinstance(self["benefits_tags"], list) and self["benefits_tags"]:
+            tags_str = " | ".join(self["benefits_tags"])
+            if self.get("benefits"):
+                self["benefits"] = str(self["benefits"]) + f"\n\n[Others: {tags_str}]"
+            else:
+                self["benefits"] = f"[Others: {tags_str}]"
+        
+        return self
+    
+    @model_validator(mode="after")
+    def populate_locations_and_negotiable(self) -> "JobSchema":
+        # Populate locations from location_raw if empty
+        if not self.locations and self.location_raw:
+            # Split by multiple separators: comma, pipe, semicolon, dash, ampersand
+            parts = re.split(r'[,|;\-&()]', self.location_raw)
+            mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
+            # Remove duplicates while preserving order
+            seen = set()
+            result = []
+            for m in mapped:
+                if m and m not in seen:
+                    result.append(m)
+                    seen.add(m)
+            self.locations = result
+        
+        # Check if salary is negotiable
+        if self.salary_raw:
+            raw = str(self.salary_raw).lower()
+            if re.search(r"(thoa.*thuan|negotiable|canh.*tranh|thuong.*luong|t\.t|tt|upto|you.*ll love|love it)", raw):
+                self.salary_negotiable = True
+        
+        # Ensure requirements field is populated
+        if not self.requirements and self.description:
+            self.requirements = self.description[:500]
+        
+        # Ensure benefits field is populated
+        if not self.benefits:
+            self.benefits = None
+        
+        return self
+
+    @field_validator("education", mode="before")
+    @classmethod
+    def normalize_education(cls, v: Any) -> Optional[str]:
+        if not v:
+            return None
+        val = str(v).strip()
+        if re.search(r"(cao.*đ|cao.*d|college|associate)", val.lower()):
+            return "Cao Đẳng"
+        elif re.search(r"(đại.*h|dai.*h|university|bachelor)", val.lower()):
+            return "Đại Học"
+        elif re.search(r"(thạc|master)", val.lower()):
+            return "Thạc Sĩ"
+        return val
+
+    @field_validator("deadline", mode="before")
+    @classmethod
+    def parse_deadline(cls, v: Any) -> Optional[date]:
+        if not v:
+            return None
+        try:
+            # Try parsing DD/MM/YYYY format (TopCV format)
+            if isinstance(v, str) and "/" in v:
+                parts = v.split("/")
+                if len(parts) == 3:
+                    day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+                    return date(year, month, day)
+            # Try standard parsing
+            if isinstance(v, str):
+                return date.fromisoformat(v)
+            return v
+        except:
+            return None
+
+if __name__ == "__main__":
+    # Load data from JSON file
+    data_file = Path(__file__).parent.parent / "data" / "topcv_jobs.json"
+    output_file = Path(__file__).parent.parent / "data" / "topcv_jobs_schema.json"
+    
+    if not data_file.exists():
+        print(f"Error: File not found: {data_file}")
+        exit(1)
+    
+    with open(data_file, "r", encoding="utf-8") as f:
+        sample_jobs = json.load(f)
+    
+    print(f"Loaded {len(sample_jobs)} jobs from {data_file.name}")
+    print(f"Processing TopcCV jobs...\n")
+    
+    processed_jobs = []
+    
+    # Process all jobs
+    for i, data in enumerate(sample_jobs):
+        try:
+            job = JobSchema(**data)
+            processed_jobs.append(job.model_dump())
+            
+            # Print progress for first 3 jobs
+            if i < 3:
+                print(f"[{i+1}] ID: {job.job_id} | Title: {job.title[:50]}")
+                print(f"    Company: {job.company_name} | Location: {job.locations}")
+                print(f"    Level: {job.job_level} | Education: {job.education}\n")
+        except Exception as e:
+            print(f"[{i+1}] Error processing job {data.get('job_id', 'N/A')}: {str(e)[:100]}")
+    
+    # Save processed data to file
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(processed_jobs, f, indent=2, ensure_ascii=False, cls=DateTimeEncoder)
+    
+    print(f"✓ Processed {len(processed_jobs)} jobs successfully")
+    print(f"✓ Output saved to: {output_file.name}")
+    print(f"  File size: {output_file.stat().st_size / 1024:.1f} KB") if output_file.exists() else None
