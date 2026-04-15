@@ -175,7 +175,7 @@ class ItViecSpider(scrapy.Spider):
 
         item = {
             "job_id": _extract_job_id(response.url),
-            "job_url": response.url,
+            "url": response.url,
             "title": response.meta.get("job_title", "N/A"),
             "salary": response.xpath("string(//div[@class='job-header-info']//div[contains(@class, 'salary')])").get(default="").strip(),
             "company_name": response.css("div.employer-name::text").get(default="").strip(),
