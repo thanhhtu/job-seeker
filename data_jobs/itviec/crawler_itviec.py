@@ -15,7 +15,7 @@ BASE_URL = "https://itviec.com/it-jobs"
 HEADLESS = True
 MAX_PAGES = 2
 MAX_JOBS_PER_RUN = 0
-OUTPUT_FILE = "data/topcv_jobs.json"
+OUTPUT_FILE = "data/itviec_jobs.json"
 
 ITVIEC_EMAIL = os.getenv("ITVIEC_EMAIL")
 ITVIEC_PASSWORD = os.getenv("ITVIEC_PASSWORD")
@@ -27,7 +27,7 @@ def _extract_job_id(url: str) -> Optional[str]:
     clean = url.split("?")[0].split("#")[0].rstrip("/")
     slug = clean.split("/")[-1] if "/" in clean else clean
     m = _JOB_ID_RE.search(slug)
-    return f"itviec-{m.group(1)}" if m else f"itviec-{slug}"
+    return f"{m.group(1)}" if m else f"itviec-{slug}"
 
 def _compute_posted_time(posted_at_text: str, crawled_dt: datetime) -> Optional[str]:
     if not crawled_dt: return None

@@ -9,7 +9,7 @@ HEADLESS = True
 MAX_PAGES = 1           # Number of listing pages to crawl
 MAX_JOBS_PER_RUN = 2    # Number of jobs to crawl (0 = all)
 CRAWL_DETAIL = True     # Whether to crawl job detail pages or not
-TIMEOUT_MS = 30000
+TIMEOUT_MS = 60000
 OUTPUT_FILE = "data/topcv_jobs.json"
 
 LIST_SELECTORS = {
@@ -215,124 +215,49 @@ async def extract_job_list_data(page) -> list:
     return jobs
 
 
-# async def extract_job_detail_data(page, job_url: str) -> dict:
-#     detail = {"url": job_url}
-    # print(f"    [DEBUG] Bắt đầu truy cập: {job_url}")
-
-#     try:
-#         await page.goto(job_url, wait_until="domcontentloaded", timeout=30000)
-#         await page.wait_for_timeout(2000)
-#         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-#         await page.wait_for_timeout(1000)
-
-#         try:
-#             meta_desc = await page.get_attribute("meta[name='description']", "content")
-#             if meta_desc:
-#                 detail["meta_description"] = meta_desc
-#         except Exception:
-#             pass
-
-#         detail["deadline"]            = await _css_text(page, DETAIL_SELECTORS["deadline"])
-#         detail["experience"]          = await _xpath_text(page, DETAIL_SELECTORS["main_experience"])
-#         detail["requirements_tags"]   = await _xpath_texts(page, DETAIL_SELECTORS["requirements_tags"])
-#         detail["benefits_tags"]       = await _xpath_texts(page, DETAIL_SELECTORS["benefits_tags"])
-#         detail["job_expertise"]       = await _xpath_texts(page, DETAIL_SELECTORS["job_expertise"])
-#         detail["description"]         = await _xpath_text(page, DETAIL_SELECTORS["description"])
-#         detail["detail_requirements"] = await _xpath_text(page, DETAIL_SELECTORS["detail_requirements"])
-#         detail["detail_salary"]       = await _xpath_text(page, DETAIL_SELECTORS["detail_salary"])
-#         detail["detail_benefit"]      = await _xpath_text(page, DETAIL_SELECTORS["detail_benefit"])
-#         detail["other_benefits"]      = await _xpath_texts(page, DETAIL_SELECTORS["other_benefits"])
-#         detail["detail_location"]     = await _xpath_text(page, DETAIL_SELECTORS["detail_location"])
-#         detail["working_days"]        = await _xpath_text(page, DETAIL_SELECTORS["working_days"])
-#         detail["job_level"]           = await _xpath_text(page, DETAIL_SELECTORS["job_level"])
-#         detail["education"]           = await _xpath_text(page, DETAIL_SELECTORS["education"])
-#         detail["hiring_quantity"]     = await _xpath_text(page, DETAIL_SELECTORS["hiring_quantity"])
-#         detail["work_mode"]           = await _xpath_text(page, DETAIL_SELECTORS["work_mode"])
-#         detail["company_name"]        = await _xpath_text(page, DETAIL_SELECTORS["company_name"])
-#         detail["company_size"]        = await _xpath_text(page, DETAIL_SELECTORS["company_size"])
-#         detail["company_industry"]    = await _xpath_text(page, DETAIL_SELECTORS["company_industry"])
-
-#         return detail
-
-#     except PlaywrightTimeout:
-#         print(f"Timeout crawling detail: {job_url}")
-#         return {"url": job_url, "error": "timeout"}
-#     except Exception as e:
-#         print(f"Error crawling detail {job_url}: {e}")
-#         return {"url": job_url, "error": str(e)}
-
 async def extract_job_detail_data(page, job_url: str) -> dict:
     detail = {"url": job_url}
-    print(f"    [DEBUG] Bắt đầu truy cập: {job_url}")
 
     try:
-        # 1. Điều hướng đến trang
-        try:
-            await page.goto(job_url, wait_until="domcontentloaded", timeout=30000)
-        except PlaywrightTimeout:
-            print(f"    [ERROR] Trang load quá lâu (Timeout): {job_url}")
-            return {"url": job_url, "error": "page_load_timeout"}
-        except Exception as e:
-            print(f"    [ERROR] Không thể mở trang: {e}")
-            return {"url": job_url, "error": f"navigation_failed: {str(e)}"}
-
+        await page.goto(job_url, wait_until="domcontentloaded", timeout=30000)
         await page.wait_for_timeout(2000)
-        
-        # Kiểm tra xem có bị TopCV chặn (Redirect về trang chủ hoặc hiện Captcha) không
-        current_url = page.url
-        if "topcv.vn" not in current_url or "login" in current_url:
-             print(f"    [WARNING] Có vẻ bị chặn hoặc redirect: {current_url}")
-             return {"url": job_url, "error": "blocked_or_redirected"}
-
-        await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await page.wait_for_timeout(1000)
 
-        # 2. Bóc tách dữ liệu với Log cho từng Selector chính
-        fields_to_crawl = [
-            ("deadline", "deadline", _css_text),
-            ("experience", "main_experience", _xpath_text),
-            ("description", "description", _xpath_text),
-            ("company_name", "company_name", _xpath_text),
-        ]
-
-        success_count = 0
-        for label, selector_key, func in fields_to_crawl:
-            try:
-                res = await func(page, DETAIL_SELECTORS[selector_key])
-                if res:
-                    detail[label] = res
-                    success_count += 1
-            except Exception as e:
-                print(f"    [LOG] Lỗi bóc tách trường '{label}': {str(e)}")
-
-        # Log cảnh báo nếu trang trống trơn không lấy được gì
-        if success_count == 0:
-            print(f"    [CRITICAL] Không bóc tách được bất kỳ dữ liệu nào. Có thể cấu trúc HTML đã thay đổi.")
-
-        # 3. Các trường phụ (Tags và thông tin chung)
         try:
-            detail["requirements_tags"]   = await _xpath_texts(page, DETAIL_SELECTORS["requirements_tags"])
-            detail["benefits_tags"]       = await _xpath_texts(page, DETAIL_SELECTORS["benefits_tags"])
-            detail["job_expertise"]       = await _xpath_texts(page, DETAIL_SELECTORS["job_expertise"])
-            detail["detail_requirements"] = await _xpath_text(page, DETAIL_SELECTORS["detail_requirements"])
-            detail["detail_salary"]       = await _xpath_text(page, DETAIL_SELECTORS["detail_salary"])
-            detail["detail_benefit"]      = await _xpath_text(page, DETAIL_SELECTORS["detail_benefit"])
-            detail["other_benefits"]      = await _xpath_texts(page, DETAIL_SELECTORS["other_benefits"])
-            detail["detail_location"]     = await _xpath_text(page, DETAIL_SELECTORS["detail_location"])
-            detail["working_days"]        = await _xpath_text(page, DETAIL_SELECTORS["working_days"])
-            detail["job_level"]           = await _xpath_text(page, DETAIL_SELECTORS["job_level"])
-            detail["education"]           = await _xpath_text(page, DETAIL_SELECTORS["education"])
-            detail["hiring_quantity"]     = await _xpath_text(page, DETAIL_SELECTORS["hiring_quantity"])
-            detail["work_mode"]           = await _xpath_text(page, DETAIL_SELECTORS["work_mode"])
-            detail["company_size"]        = await _xpath_text(page, DETAIL_SELECTORS["company_size"])
-            detail["company_industry"]    = await _xpath_text(page, DETAIL_SELECTORS["company_industry"])
-        except Exception as e:
-             print(f"    [LOG] Lỗi khi lấy các trường chi tiết phụ: {str(e)}")
+            meta_desc = await page.get_attribute("meta[name='description']", "content")
+            if meta_desc:
+                detail["meta_description"] = meta_desc
+        except Exception:
+            pass
+
+        detail["deadline"]            = await _css_text(page, DETAIL_SELECTORS["deadline"])
+        detail["experience"]          = await _xpath_text(page, DETAIL_SELECTORS["main_experience"])
+        detail["requirements_tags"]   = await _xpath_texts(page, DETAIL_SELECTORS["requirements_tags"])
+        detail["benefits_tags"]       = await _xpath_texts(page, DETAIL_SELECTORS["benefits_tags"])
+        detail["job_expertise"]       = await _xpath_texts(page, DETAIL_SELECTORS["job_expertise"])
+        detail["description"]         = await _xpath_text(page, DETAIL_SELECTORS["description"])
+        detail["detail_requirements"] = await _xpath_text(page, DETAIL_SELECTORS["detail_requirements"])
+        detail["detail_salary"]       = await _xpath_text(page, DETAIL_SELECTORS["detail_salary"])
+        detail["detail_benefit"]      = await _xpath_text(page, DETAIL_SELECTORS["detail_benefit"])
+        detail["other_benefits"]      = await _xpath_texts(page, DETAIL_SELECTORS["other_benefits"])
+        detail["detail_location"]     = await _xpath_text(page, DETAIL_SELECTORS["detail_location"])
+        detail["working_days"]        = await _xpath_text(page, DETAIL_SELECTORS["working_days"])
+        detail["job_level"]           = await _xpath_text(page, DETAIL_SELECTORS["job_level"])
+        detail["education"]           = await _xpath_text(page, DETAIL_SELECTORS["education"])
+        detail["hiring_quantity"]     = await _xpath_text(page, DETAIL_SELECTORS["hiring_quantity"])
+        detail["work_mode"]           = await _xpath_text(page, DETAIL_SELECTORS["work_mode"])
+        detail["company_name"]        = await _xpath_text(page, DETAIL_SELECTORS["company_name"])
+        detail["company_size"]        = await _xpath_text(page, DETAIL_SELECTORS["company_size"])
+        detail["company_industry"]    = await _xpath_text(page, DETAIL_SELECTORS["company_industry"])
 
         return detail
 
+    except PlaywrightTimeout:
+        print(f"Timeout crawling detail: {job_url}")
+        return {"url": job_url, "error": "timeout"}
     except Exception as e:
-        print(f"    [ERROR] Lỗi không xác định trong extract_job_detail_data: {e}")
+        print(f"Error crawling detail {job_url}: {e}")
         return {"url": job_url, "error": str(e)}
 
 async def crawl_topcv() -> list:
@@ -414,7 +339,7 @@ def save_to_json(jobs: list, filename: str) -> None:
     if not jobs:
         print("No data to save.")
         return
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(jobs, f, ensure_ascii=False, indent=2)
     print(f"Saved {len(jobs)} jobs → {filename}")

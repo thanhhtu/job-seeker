@@ -1,124 +1,91 @@
 [
   {
-    "job_id": "itviec-5523",
-    "job_url": "https://itviec.com/it-jobs/ims-developer-cobol-capgemini-vietnam-5523?lab_feature=preview_jd_page",
-    "title": "IMS Developer (Cobol)",
-    "salary": "Sign in to view salary",
-    "company_name": "Capgemini Vietnam",
-    "location": "106 Nguyen Van Troi, Ho Chi Minh",
+    "job_id": "3616",
+    "job_url": "https://itviec.com/it-jobs/truong-nhom-mlops-khoi-ai-thiet-bi-ai-open-platform-vinsmart-future-3616?lab_feature=preview_jd_page",
+    "title": "Trưởng nhóm MLOps (Khối AI Thiết bị/AI Open Platform)",
+    "salary": "You'll love it",
+    "company_name": "VinSmart Future",
+    "location": "Tòa nhà TechnoPark, Oceanpark, Đa Tốn, Ha Noi",
     "work_mode": "At office",
     "posted_datetime": null,
     "skills": [
-      "COBOL",
-      "English"
+      "MLOps",
+      "Docker",
+      "Project Management",
+      "Business Analysis",
+      "English",
+      "Python"
+    ],
+    "job_expertise": [
+      "Manager"
+    ],
+    "job_domains": [
+      "IT Services and IT Consulting",
+      "AI Software & Services"
+    ],
+    "top_reasons": [
+      "Competitive Salary & Benefits",
+      "Training course and certificates",
+      "The preferences when using the services of the Vin"
+    ],
+    "description": "Xây dựng Hạ tầng: Thiết kế và quản lý các Pipelines tự động hóa việc thu thập dữ liệu, huấn luyện, kiểm thử và triển khai mô hình AI.\nQuản trị Tài nguyên & GPU: Tối ưu hóa việc sử dụng tài nguyên tính toán, đảm bảo hiệu suất huấn luyện mô hình cao nhất với chi phí thấp nhất.\nTriển khai Đa nền tảng: Đưa các mô hình AI lên môi trường thực tế thông qua Docker, Kubernetes; tối ưu hóa cho các thiết bị Edge (Camera, Ô tô, Thiết bị đeo).\nGiám sát & Duy trì: Thiết lập hệ thống cảnh báo và giám sát hiệu năng mô hình theo thời gian thực (Model Drift, Latency, Accuracy) để kịp thời tái huấn luyện.\nBảo mật & Tuân thủ: Đảm bảo an toàn dữ liệu và bảo mật cho các API/Dịch vụ AI theo tiêu chuẩn quốc tế.\nDẫn dắt Đội ngũ: Quản lý và đào tạo đội ngũ kỹ sư DevOps/SRE; phối hợp chặt chẽ với đội ngũ AI Scientist để hiện thực hóa các thuật toán.",
+    "requirements": "Bắt buộc:\nTốt nghiệp ĐH các ngành: CNTT, AI/ML, Computational Linguistics, hoặc các ngành liên quan.\nTối thiểu 5 năm kinh nghiệm trong vị trí vận hành, phân tích nghiệp vụ, trải nghiệm khách hàng, quản lý dự án hoặc kinh doanh\nCó kỹ năng quản lý đội nhóm và phối hợp cross-functional (AI engineer, Product, UX, QA).\nTiếng Anh tốt (đọc hiểu tài liệu kỹ thuật + giao tiếp công việc).\nƯu tiên:\nThành thạo các công cụ Containerization: Docker, Kubernetes (K8s).\nKinh nghiệm với các công cụ MLOps chuyên dụng: Kubeflow, MLflow, BentoML, hoặc SageMaker.\nSử dụng tốt các ngôn ngữ: Python, Bash script và các công cụ IaC (Terraform, Ansible).\nAm hiểu về CI/CD (Jenkins, GitLab CI, GitHub Actions) áp dụng cho Machine Learning.\nQuyền lợi:\nHưởng đầy đủ chế độ và lương thưởng theo quy định chung của công ty.\nMôi trường làm việc chuyên nghiệp, năng động và cơ hội tham gia dự án lớn.\nĐược đào tạo nâng cao kỹ năng.",
+    "benefits": "QUYỀN LỢI CHUNG KHI GIA NHẬP VINSMART FUTURE\n• Thời gian làm việc, chấm công linh hoạt (Work from home vào thứ 7 làm việc).\n• Mức thu nhập, các gói thưởng hấp dẫn, cạnh tranh mạnh mẽ so với thị trường.\n• Được hưởng chế độ ưu đãi khi sử dụng các dịch vụ thuộc hệ sinh thái Tập đoàn: Ưu đãi học phí (Vinschool), khám chữa bệnh (Vinmec), nghỉ dưỡng (Vinpearl), mua xe (VinFast), thuê hoặc/và mua nhà (Vinhomes) … theo chế độ của Tập đoàn.\n• Cơ hội tiếp cận dự án chiến lược công nghệ trọng điểm, quy mô lớn.\n• Cơ hội làm việc trong môi trường công nghệ chuyên nghiệp, quy tụ các nhà khoa học, chuyên gia, kỹ sư đến từ các Công ty công nghệ hàng đầu Việt Nam và thế giới.\n• Cung cấp các nguồn học tập miễn phí trên các nền tảng Udemy, Coursera, O’Reilly; hội thảo nội bộ; tài trợ chứng chỉ và chương trình cố vấn đặc biệt từ Ban lãnh đạo Tập đoàn và Công ty.\n• Cơ hội tham gia các Câu lạc bộ công nghệ của Tập đoàn, các sự kiện công nghệ nội bộ để học hỏi, phát triển những dự án, ý tưởng cá nhân vào thực tế.\n• Cung cấp các chương trình đào tạo để trở thành \"Giảng viên nội bộ\" tham gia chia sẻ chuyên môn với những quyền lợi đặc biệt.\n• Được hưởng đầy đủ các chế độ bảo hiểm theo quy định của Luật Lao động (BHXH, BHYT, BHTN) và được Công ty mua Bảo hiểm sức khỏe cá nhân theo cấp bậc vị trí, khám sức khỏe định kỳ tại Bệnh viện và Trung tâm khám sức khỏe uy tín trên toàn quốc.\n• 12 ngày nghỉ phép năm, nghỉ các ngày lễ, Tết theo quy định của pháp luật.\n• Phụ cấp ăn trưa.\n• Tham gia các hoạt động nội bộ, hoạt động teambuilding, sự kiện hàng năm của Công ty.",
+    "company_full_name": "Vin Smart Future",
+    "company_type": "IT Service and IT Consulting",
+    "company_industry": "IT Services and IT Consulting",
+    "company_size": "1000+\nemployees",
+    "country": "Vietnam",
+    "working_days": "Monday - Saturday",
+    "overtime_policy": "Extra salary for OT"
+  },
+  {
+    "job_id": "4200",
+    "job_url": "https://itviec.com/it-jobs/lap-trinh-vien-anycube-net-net-core-japanese-vinx-vietnam-4200?lab_feature=preview_jd_page",
+    "title": "Lập trình viên AnyCUBE (.NET/.NET Core, Japanese)",
+    "salary": "You'll love it",
+    "company_name": "VINX VIETNAM",
+    "location": "WASECO building,10 Pho Quang Street, Ho Chi Minh",
+    "work_mode": "At office",
+    "posted_datetime": "2026-04-14 07:18:47",
+    "skills": [
+      ".NET",
+      "Japanese",
+      "English",
+      "JavaScript",
+      "SQL"
     ],
     "job_expertise": [
       "Backend Developer"
     ],
     "job_domains": [
-      "Insurance",
-      "IT Services and IT Consulting"
+      "Software Development Outsourcing"
     ],
-    "top_reasons": [],
-    "description": "Works with members of the development team and is responsible development, and implementation of\nsoftware applications.\nReport directly to the Project Manager/Team Leader\nWork with project team members and support functions\nEnsure to meeting the development goal and deadline.\nDevelop software\nWrite design/implementation documentation\nParticipate in design/code reviews\nCreate, test, maintain and troubleshoot software\nCreate prototype/test applications\nWork with members of project teams to ensure specifications are satisfied",
-    "requirements": "Bachelor Degree in Computer Science/ related degree with at least 2 year of working experience in Cobol, IMS\nAble to communicate in English is mandatory",
-    "benefits": "Competitive salary, health insurance covered for employee and dependents.\nWorking on international projects. Professional and dynamic working environment\nAchieving valuable experience with variety projects, new technologies and hundreds of talents\nReceiving training opportunities including many technical seminars and soft skill training courses\nGood opportunity for promotion through regular performance review system.",
-    "company_full_name": "One of the world leading company in IT services",
+    "top_reasons": [
+      "Nền tảng cơ sở vững chắc",
+      "Đội ngũ nhân lực chuyên nghiệp",
+      "Môi trường làm việc thân thiện, tiềm năng"
+    ],
+    "description": "Bảo trì và phát triển hệ thống bán lẻ tại thị trường Nhật Bản:\nĐiều tra & giải quyết vấn đề được liên lạc (thiết kế, code, test)\nTài liệu hóa các dự án đã thực hiện\nTham gia nghiên cứu, thực hiện các dự án mới",
+    "requirements": "Yêu cầu :\nThành thạo .NET/.NET Core trên nền tảng web\nHiểu biết rộng về HTML, CSS, Javascript\nSử dụng thành thạo LinQ\nCó kinh nghiệm làm việc với database SQL Server, tối ưu câu query và nâng cao hiệu suất\nCó kinh nghiệm xử lý lập lịch (Task Scheduler), tác vụ chạy ngầm – xử lý hàng đợi (Queue Job)\nSử dụng GIT, SVN\nTiếng Anh : đọc, viết\nTiếng Nhật : biết tiếng Nhật là lợi thế\nƯu tiên ứng viên:\nBiết tiếng Nhật cơ bản hoặc có kinh nghiệm làm việc tại công ty Nhật\nCó kinh nghiệm trong lĩnh vực bán lẻ\nCó kiến thức sử dụng Cloud",
+    "benefits": "Được xác định dựa trên năng lực và mức lương hiện tại\nTăng lương 1 năm 1 lần, thưởng 1 lần/năm\nĐược nghỉ phép đặc biệt của công ty sau khi đã hoàn thành nhiệm vụ là 8 ngày\nCompany trip mỗi năm 1 lần\nNhân viên xuất sắc được mời đi du lịch Nhật Bản.\nCông ty chúng tôi mới thành lập tại Việt Nam vào tháng 1 năm 2014, vì vậy mọi người đều có cơ hội thành công như nhau.\nCông ty chúng tôi là nhà tích hợp hệ thống cho ngành phân phối và bán lẻ lớn nhất Nhật Bản. Có nhiều cơ hội tham gia các chuyến công tác và đào tạo tại Nhật Bản\nNgoài ngày nghỉ phép hàng năm, công ty còn có thêm khoảng 9 ngày nghỉ phép đặc biệt",
+    "company_full_name": "VINX VIETNAM",
     "company_type": "IT Service and IT Consulting",
     "company_industry": "IT Services and IT Consulting",
-    "company_size": "301-500\nemployees",
-    "country": "France",
+    "company_size": "1-50\nemployees",
+    "country": "Japan",
     "working_days": "Monday - Friday",
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-1312",
-    "job_url": "https://itviec.com/it-jobs/business-analyst-tadidi-jsc-1312?lab_feature=preview_jd_page",
-    "title": "Business Analyst",
-    "salary": "Sign in to view salary",
-    "company_name": "Tadidi JSC",
-    "location": "Tòa nhà Waseco số 10 Phổ Quang, Phường Tân Sơn Hòa, Ho Chi Minh",
-    "work_mode": "At office",
-    "posted_datetime": "2026-04-14 07:14:18",
-    "skills": [
-      "Business Analysis",
-      "API",
-      "Product Management",
-      "Team Management",
-      "English"
-    ],
-    "job_expertise": [
-      "Business Analyst"
-    ],
-    "job_domains": [
-      "Tourism and Hospitality Services"
-    ],
-    "top_reasons": [
-      "Competitive salary based on ability.",
-      "SHUI & PIT based on full paid salary.",
-      "Mid-autumn gift, wedding & maternity bonus."
-    ],
-    "description": "As a Business Analyst at TaDiDi JSC, your role will encompass the following responsibilities:\nRequirements Analysis:\nLearn to collaborate with teams to understand and document user requirements, translating them into functional specifications.\nIndustry Research:\nStay updated on industry trends and best practices to identify opportunities for process improvements.\nStakeholder Engagement:\nDevelop skills in communicating and working with stakeholders to ensure a shared understanding of project requirements.\nQuality Assurance:\nGain experience in reviewing testing scenarios and defect verification to maintain solution quality.\nCommunication:\nParticipate in project representation and communication efforts within the team.\nUser Acceptance Testing:\nLearn to plan and execute User Acceptance Testing.\nTraining and Support:\nAcquire the ability to provide end-user support and training for new processes and technologies.",
-    "requirements": "This position is suitable for candidates with at least 2 years of experience in Business Analysis or a related role. We are seeking applications from candidates with the following qualifications and attributes:\nBachelor’s degree in Information Technology (IT) or Travel Business fields\nStrong English communication skills, both written and verbal\nMinimum 2 years of relevant experience in IT Business Analysis (or similar roles involving requirements gathering, documentation, and stakeholder communication)\nDemonstrated passion and a genuine interest in the field of IT Business Analysis",
-    "benefits": "Competitive salary based on ability.\n14 annual leaves in a year: 12 annual leaves + 1 day for birthday + 1 day on Christmas.\nHappy Hour every 4 weeks.\nMany parties: Badminton team, Mid-Autumn festival, Christmas Day, New Year….\nSHUI & PIT based on full paid salary.\nNot OT, have time for yourself.\nMulti-national colleagues.\nCompany trip every year.\nMany benefits: mid-autumn gift, wedding & maternity bonus.\nA laptop for work.",
-    "company_full_name": "Tadidi JV JSC is one of the leading company in products & services for Travel & Hospitality",
-    "company_type": "IT Product",
-    "company_industry": "Tourism and Hospitality Services",
-    "company_size": "51-150\nemployees",
-    "country": "Vietnam",
-    "working_days": "Monday - Friday",
-    "overtime_policy": "No OT"
-  },
-  {
-    "job_id": "itviec-3242",
-    "job_url": "https://itviec.com/it-jobs/ai-ml-engineer-tensorflow-pytorch-nlp-saigon-new-port-3242?lab_feature=preview_jd_page",
-    "title": "AI / ML Engineer (TensorFlow, Pytorch, NLP)",
-    "salary": "Sign in to view salary",
-    "company_name": "Saigon New Port",
-    "location": "1295 1295B, Nguyễn Thị Định, Phường Cát Lái, Ho Chi Minh",
-    "work_mode": "At office",
-    "posted_datetime": "2026-04-13 18:14:20",
-    "skills": [
-      "AI",
-      "NLP",
-      "Data Science",
-      "PyTorch",
-      "TensorFlow",
-      "Machine Learning"
-    ],
-    "job_expertise": [
-      "AI / Machine Learning Engineer"
-    ],
-    "job_domains": [
-      "Transportation, Logistics and Warehouse",
-      "Software Products and Web Services",
-      "AI Software & Services"
-    ],
-    "top_reasons": [
-      "Chế độ lương thưởng, phúc lợi hấp dẫn",
-      "Môi trường làm việc chuyên nghiệp, năng động",
-      "Đào tạo chuyên sâu nghiệp vụ Cảng, Kho, Logistic"
-    ],
-    "description": "We are looking for an\nAI/ML Engineer\nto design, build, and deploy\npractical AI solutions\nthat improve operations, automation, and decision-making in\nport and logistics systems.\nThis role focuses on\nreal-world problems\n, not academic research.\nKey responsibilities\nBuild, train, and deploy AI/ML models (forecasting, computer vision, NLP, optimization).\nWork with business teams to translate operational problems into AI use cases.\nDevelop PoC/MVP AI solutions and support scaling to production.\nCollaborate with Data, Architecture, and Digital Tech teams to ensure reliable pipelines.\nMonitor model performance, data drift, and retraining needs.\nFollow security, data governance, and AI risk guidelines.",
-    "requirements": "2–7+ years of experience in AI/ML, data science, or applied machine learning.\nStrong Python skills; experience with TensorFlow, PyTorch, or similar frameworks.\nSolid understanding of data preparation, feature engineering, and model evaluation.\nExperience with computer vision, time-series, or NLP is a plus.\nPractical mindset and ability to explain AI results to non-technical\nWho should apply\nEngineers who want to apply AI to real systems, not just research papers.\nProblem-solvers comfortable working with messy, real-world data.\nAI practitioners who value impact over hype.",
-    "benefits": "Work on large-scale, real operational data (ports, logistics, IoT, video, sensors).\nHigh-impact use cases beyond typical “chatbot demos”.\nFreedom to experiment via PoC/MVP with a clear path to production.",
-    "company_full_name": "Tân Cảng Sài Gòn là nhà khai thác cảng container lớn nhất tại Việt Nam và đứng top 30 thế giới",
-    "company_type": "IT Product",
-    "company_industry": "Transportation, Logistics and Warehouse",
-    "company_size": "151-300\nemployees",
-    "country": "Vietnam",
-    "working_days": "Monday - Friday",
-    "overtime_policy": "No OT"
-  },
-  {
-    "job_id": "itviec-4051",
+    "job_id": "4051",
     "job_url": "https://itviec.com/it-jobs/business-analyst-agreementgen-proficient-in-english-designveloper-dsv-4051?lab_feature=preview_jd_page",
     "title": "Business Analyst (Agile, Scrum, Proficient in English)",
-    "salary": "Sign in to view salary",
+    "salary": "Up to $2000",
     "company_name": "Designveloper (DSV)",
     "location": "No. 53-55-57, Pho Duc Chinh street, Nguyen Thai Binh ward, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-13 18:14:23",
+    "posted_datetime": "2026-04-14 01:18:50",
     "skills": [
       "Business Analysis",
       "English",
@@ -150,14 +117,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-2736",
+    "job_id": "2736",
     "job_url": "https://itviec.com/it-jobs/software-project-leader-project-manager-pmp-pmi-lg-electronics-development-vietnam-lgedv-2736?lab_feature=preview_jd_page",
     "title": "Software Project Leader - Project Manager (PMP,PMI)",
-    "salary": "Sign in to view salary",
+    "salary": "1,500 - 2,500 USD",
     "company_name": "LG Electronics Development Vietnam (LGEDV)",
     "location": "Tầng 17 đến tầng 21, Tòa văn phòng, Lotte Mall Hà Nội, Số 272 Võ Chí Công, Phường Phú Thượng, Quận Tây Hồ, Thành phố Hà Nội, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-13 18:14:26",
+    "posted_datetime": "2026-04-14 01:18:53",
     "skills": [
       "Project Management",
       "Lean Project Management",
@@ -188,14 +155,14 @@
     "overtime_policy": "Extra salary for OT"
   },
   {
-    "job_id": "itviec-3005",
+    "job_id": "3005",
     "job_url": "https://itviec.com/it-jobs/expert-information-security-networking-aws-id383-vpbank-3005?lab_feature=preview_jd_page",
     "title": "Expert, Information Security (Networking, AWS) – ID383",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "VPBank",
     "location": "89 Lang Ha, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-13 18:14:27",
+    "posted_datetime": "2026-04-14 01:18:56",
     "skills": [
       "Information Security",
       "Swift",
@@ -226,14 +193,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-2813",
+    "job_id": "2813",
     "job_url": "https://itviec.com/it-jobs/security-engineer-cong-ty-co-phan-cmc-openai-2813?lab_feature=preview_jd_page",
     "title": "Security Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "CÔNG TY CỔ PHẦN CMC OPENAI",
     "location": "Tòa nhà CMC , số 11 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-13 18:14:30",
+    "posted_datetime": "2026-04-14 01:18:59",
     "skills": [
       "System Architecture",
       "GCP",
@@ -261,14 +228,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-1727",
+    "job_id": "1727",
     "job_url": "https://itviec.com/it-jobs/network-engineer-lg-cns-viet-nam-1727?lab_feature=preview_jd_page",
     "title": "Network Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "1,000 - 2,000 USD",
     "company_name": "LG CNS Việt Nam",
     "location": "Tầng 4, tòa nhà Youngjin E&C Hải Phòng, KCN Tràng Duệ, Xã Lê Lợi, Huyện An Dương, Thành phố Hải Phòng, Việt Nam",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-13 18:14:32",
+    "posted_datetime": "2026-04-14 01:19:01",
     "skills": [
       "Networking",
       "Hardware Troubleshooting"
@@ -296,14 +263,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-2853",
+    "job_id": "2853",
     "job_url": "https://itviec.com/it-jobs/fullstack-developer-javascript-typescript-reactjs-boxgate-2853?lab_feature=preview_jd_page",
     "title": "Fullstack Developer (JavaScript, TypeScript, ReactJS)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Boxgate",
     "location": "40 Hoa Đào, Phường 02, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 01:14:34",
+    "posted_datetime": "2026-04-14 01:19:03",
     "skills": [
       "Fullstack",
       "NextJS",
@@ -339,14 +306,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-5046",
+    "job_id": "5046",
     "job_url": "https://itviec.com/it-jobs/fresher-software-engineer-motorola-solutions-5046?lab_feature=preview_jd_page",
     "title": "Fresher Software Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Motorola Solutions",
     "location": "L07.01, Tầng 07, Tháp A, Khu thương mại dịch vụ kết hợp nhà ở cao tầng tại lô đất 1-13, thuộc khu chức năng số 1 – Số 15, đường Trần Bạch Đằng, Phường Thủ Thiêm, Ho Chi Minh",
     "work_mode": "",
-    "posted_datetime": "2026-04-14 01:14:36",
+    "posted_datetime": "2026-04-14 01:19:06",
     "skills": [
       "Automation Test",
       "Selenium"
@@ -370,14 +337,14 @@
     "overtime_policy": "Extra salary for OT"
   },
   {
-    "job_id": "itviec-1543",
+    "job_id": "1543",
     "job_url": "https://itviec.com/it-jobs/qa-engineer-motorola-solutions-1543?lab_feature=preview_jd_page",
     "title": "QA Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Motorola Solutions",
     "location": "L07.01, Tầng 07, Tháp A, Khu thương mại dịch vụ kết hợp nhà ở cao tầng tại lô đất 1-13, thuộc khu chức năng số 1 – Số 15, đường Trần Bạch Đằng, Phường Thủ Thiêm, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 02:14:39",
+    "posted_datetime": "2026-04-14 01:19:08",
     "skills": [
       "Python",
       "AI"
@@ -401,14 +368,14 @@
     "overtime_policy": "Extra salary for OT"
   },
   {
-    "job_id": "itviec-3950",
+    "job_id": "3950",
     "job_url": "https://itviec.com/it-jobs/senior-lead-fullstack-developer-the-one-digi-corp-3950?lab_feature=preview_jd_page",
     "title": "Senior/Lead Fullstack Developer",
-    "salary": "Sign in to view salary",
+    "salary": "1,900 - 3,800 USD",
     "company_name": "The One Digi Corp",
     "location": "40 Thien Phuoc, Ward 9, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 02:14:41",
+    "posted_datetime": "2026-04-14 02:19:11",
     "skills": [
       "PHP",
       ".NET",
@@ -439,14 +406,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-0757",
+    "job_id": "0757",
     "job_url": "https://itviec.com/it-jobs/solution-architecture-java-aws-bi-kcn-4m017-msb-0757?lab_feature=preview_jd_page",
     "title": "Solution Architecture (Java, AWS, BI) - KCN - 4M017",
-    "salary": "Sign in to view salary",
+    "salary": "2,500 - 3,500 USD",
     "company_name": "MSB",
     "location": "ROX Tower, 54A Nguyen Chi Thanh, phuong Lang Thuong, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 02:14:44",
+    "posted_datetime": "2026-04-14 02:19:13",
     "skills": [
       "Java",
       "Kubernetes",
@@ -478,14 +445,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3212",
+    "job_id": "3212",
     "job_url": "https://itviec.com/it-jobs/project-manager-java-chinese-english-mysql-sql-cong-ty-tnhh-clever-creations-tech-3212?lab_feature=preview_jd_page",
     "title": "Project Manager (Java, Chinese, English, MySQL, SQL)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Công Ty TNHH Clever Creations Tech",
     "location": "459 Sư Vạn Hạnh, Phường 12, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 03:14:47",
+    "posted_datetime": "2026-04-14 03:19:16",
     "skills": [
       "Java",
       "Spring Boot",
@@ -513,14 +480,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3500",
+    "job_id": "3500",
     "job_url": "https://itviec.com/it-jobs/senior-java-developer-fintech-financial-one-mount-group-3500?lab_feature=preview_jd_page",
     "title": "Senior Java Developer (Fintech/Financial)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "One Mount Group",
     "location": "Tower 2 (T26) Times City, 458 Minh Khai, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 03:14:49",
+    "posted_datetime": "2026-04-14 03:19:19",
     "skills": [
       "Java",
       "API",
@@ -554,14 +521,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3730",
+    "job_id": "3730",
     "job_url": "https://itviec.com/it-jobs/caspeco-backend-developer-nodejs-automation-ai-scandinavian-software-park-3730?lab_feature=preview_jd_page",
     "title": "Caspeco - Backend Developer (NodeJS | Automation & AI)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Scandinavian Software Park",
     "location": "Tầng 19, tòa nhà Peakview Tower, 36 Hoàng Cầu, Đống Đa, Hà Nội, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 03:14:51",
+    "posted_datetime": "2026-04-14 03:19:21",
     "skills": [
       "NodeJS",
       "Generative AI",
@@ -594,14 +561,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4438",
+    "job_id": "4438",
     "job_url": "https://itviec.com/it-jobs/senior-2d-artist-d2m-4438?lab_feature=preview_jd_page",
     "title": "Senior 2D Artist",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "D2M",
     "location": "3 Đường Số 5, KDC Cityland Park Hills, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 03:14:54",
+    "posted_datetime": "2026-04-14 03:19:24",
     "skills": [
       "Adobe Photoshop",
       "Figma",
@@ -631,14 +598,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-1850",
+    "job_id": "1850",
     "job_url": "https://itviec.com/it-jobs/system-network-administrator-inbox4us-1850?lab_feature=preview_jd_page",
     "title": "System & Network Administrator",
-    "salary": "Sign in to view salary",
+    "salary": "Negotiation",
     "company_name": "Inbox4us",
     "location": "63 Phạm Ngọc Thạch, Phường 6, Quận 3, Hồ Chí Minh, Việt Nam, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 04:14:56",
+    "posted_datetime": "2026-04-14 04:19:27",
     "skills": [
       "Firewall",
       "IT Support"
@@ -666,14 +633,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-5231",
+    "job_id": "5231",
     "job_url": "https://itviec.com/it-jobs/qa-engineer-manual-automation-2-openings-smg-swiss-marketplace-group-5231?lab_feature=preview_jd_page",
     "title": "QA Engineer (Manual & Automation) - 2 Openings",
-    "salary": "Sign in to view salary",
+    "salary": "1,500 - 3,000 USD",
     "company_name": "SMG Swiss Marketplace Group",
     "location": "Viettel Tower, 285 CMT8, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 04:14:58",
+    "posted_datetime": "2026-04-14 04:19:30",
     "skills": [
       "QA QC",
       "Scrum",
@@ -705,14 +672,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3943",
+    "job_id": "3943",
     "job_url": "https://itviec.com/it-jobs/principal-data-engineer-ai-data-pipeline-money-forward-vietnam-co-ltd-3943?lab_feature=preview_jd_page",
     "title": "Principal Data Engineer - AI/Data Pipeline",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "MONEY FORWARD VIETNAM CO.,LTD",
     "location": "Tòa nhà E.Town Central, Số 11 Đoàn Văn Bơ, Phường Xóm Chiếu, TP.HCM, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 04:15:01",
+    "posted_datetime": "2026-04-14 04:19:33",
     "skills": [
       "Python",
       "SQL",
@@ -744,14 +711,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-1806",
+    "job_id": "1806",
     "job_url": "https://itviec.com/it-jobs/maintmaster-senior-fullstack-developer-react-net-scandinavian-software-park-1806?lab_feature=preview_jd_page",
     "title": "MaintMaster - Senior Fullstack Developer (React, .NET)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Scandinavian Software Park",
     "location": "Tầng 19, tòa nhà Peakview Tower, 36 Hoàng Cầu, Đống Đa, Hà Nội, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 05:15:03",
+    "posted_datetime": "2026-04-14 05:19:35",
     "skills": [
       "Fullstack",
       "UI-UX",
@@ -786,14 +753,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4202",
+    "job_id": "4202",
     "job_url": "https://itviec.com/it-jobs/maintmaster-manual-qa-engineer-scandinavian-software-park-4202?lab_feature=preview_jd_page",
     "title": "MaintMaster - Manual QA Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Scandinavian Software Park",
     "location": "Tầng 19, tòa nhà Peakview Tower, 36 Hoàng Cầu, Đống Đa, Hà Nội, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 05:15:06",
+    "posted_datetime": "2026-04-14 05:19:37",
     "skills": [
       "Tester",
       "Usability testing",
@@ -827,52 +794,52 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4200",
-    "job_url": "https://itviec.com/it-jobs/lap-trinh-vien-anycube-net-net-core-japanese-vinx-vietnam-4200?lab_feature=preview_jd_page",
-    "title": "Lập trình viên AnyCUBE (.NET/.NET Core, Japanese)",
-    "salary": "Sign in to view salary",
-    "company_name": "VINX VIETNAM",
-    "location": "WASECO building,10 Pho Quang Street, Ho Chi Minh",
+    "job_id": "1312",
+    "job_url": "https://itviec.com/it-jobs/business-analyst-tadidi-jsc-1312?lab_feature=preview_jd_page",
+    "title": "Business Analyst",
+    "salary": "You'll love it",
+    "company_name": "Tadidi JSC",
+    "location": "Tòa nhà Waseco số 10 Phổ Quang, Phường Tân Sơn Hòa, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 07:15:09",
+    "posted_datetime": "2026-04-14 06:19:39",
     "skills": [
-      ".NET",
-      "Japanese",
-      "English",
-      "JavaScript",
-      "SQL"
+      "Business Analysis",
+      "API",
+      "Product Management",
+      "Team Management",
+      "English"
     ],
     "job_expertise": [
-      "Backend Developer"
+      "Business Analyst"
     ],
     "job_domains": [
-      "Software Development Outsourcing"
+      "Tourism and Hospitality Services"
     ],
     "top_reasons": [
-      "Nền tảng cơ sở vững chắc",
-      "Đội ngũ nhân lực chuyên nghiệp",
-      "Môi trường làm việc thân thiện, tiềm năng"
+      "Competitive salary based on ability.",
+      "SHUI & PIT based on full paid salary.",
+      "Mid-autumn gift, wedding & maternity bonus."
     ],
-    "description": "Bảo trì và phát triển hệ thống bán lẻ tại thị trường Nhật Bản:\nĐiều tra & giải quyết vấn đề được liên lạc (thiết kế, code, test)\nTài liệu hóa các dự án đã thực hiện\nTham gia nghiên cứu, thực hiện các dự án mới",
-    "requirements": "Yêu cầu :\nThành thạo .NET/.NET Core trên nền tảng web\nHiểu biết rộng về HTML, CSS, Javascript\nSử dụng thành thạo LinQ\nCó kinh nghiệm làm việc với database SQL Server, tối ưu câu query và nâng cao hiệu suất\nCó kinh nghiệm xử lý lập lịch (Task Scheduler), tác vụ chạy ngầm – xử lý hàng đợi (Queue Job)\nSử dụng GIT, SVN\nTiếng Anh : đọc, viết\nTiếng Nhật : biết tiếng Nhật là lợi thế\nƯu tiên ứng viên:\nBiết tiếng Nhật cơ bản hoặc có kinh nghiệm làm việc tại công ty Nhật\nCó kinh nghiệm trong lĩnh vực bán lẻ\nCó kiến thức sử dụng Cloud",
-    "benefits": "Được xác định dựa trên năng lực và mức lương hiện tại\nTăng lương 1 năm 1 lần, thưởng 1 lần/năm\nĐược nghỉ phép đặc biệt của công ty sau khi đã hoàn thành nhiệm vụ là 8 ngày\nCompany trip mỗi năm 1 lần\nNhân viên xuất sắc được mời đi du lịch Nhật Bản.\nCông ty chúng tôi mới thành lập tại Việt Nam vào tháng 1 năm 2014, vì vậy mọi người đều có cơ hội thành công như nhau.\nCông ty chúng tôi là nhà tích hợp hệ thống cho ngành phân phối và bán lẻ lớn nhất Nhật Bản. Có nhiều cơ hội tham gia các chuyến công tác và đào tạo tại Nhật Bản\nNgoài ngày nghỉ phép hàng năm, công ty còn có thêm khoảng 9 ngày nghỉ phép đặc biệt",
-    "company_full_name": "VINX VIETNAM",
-    "company_type": "IT Service and IT Consulting",
-    "company_industry": "IT Services and IT Consulting",
-    "company_size": "1-50\nemployees",
-    "country": "Japan",
+    "description": "As a Business Analyst at TaDiDi JSC, your role will encompass the following responsibilities:\nRequirements Analysis:\nLearn to collaborate with teams to understand and document user requirements, translating them into functional specifications.\nIndustry Research:\nStay updated on industry trends and best practices to identify opportunities for process improvements.\nStakeholder Engagement:\nDevelop skills in communicating and working with stakeholders to ensure a shared understanding of project requirements.\nQuality Assurance:\nGain experience in reviewing testing scenarios and defect verification to maintain solution quality.\nCommunication:\nParticipate in project representation and communication efforts within the team.\nUser Acceptance Testing:\nLearn to plan and execute User Acceptance Testing.\nTraining and Support:\nAcquire the ability to provide end-user support and training for new processes and technologies.",
+    "requirements": "This position is suitable for candidates with at least 2 years of experience in Business Analysis or a related role. We are seeking applications from candidates with the following qualifications and attributes:\nBachelor’s degree in Information Technology (IT) or Travel Business fields\nStrong English communication skills, both written and verbal\nMinimum 2 years of relevant experience in IT Business Analysis (or similar roles involving requirements gathering, documentation, and stakeholder communication)\nDemonstrated passion and a genuine interest in the field of IT Business Analysis",
+    "benefits": "Competitive salary based on ability.\n14 annual leaves in a year: 12 annual leaves + 1 day for birthday + 1 day on Christmas.\nHappy Hour every 4 weeks.\nMany parties: Badminton team, Mid-Autumn festival, Christmas Day, New Year….\nSHUI & PIT based on full paid salary.\nNot OT, have time for yourself.\nMulti-national colleagues.\nCompany trip every year.\nMany benefits: mid-autumn gift, wedding & maternity bonus.\nA laptop for work.",
+    "company_full_name": "Tadidi JV JSC is one of the leading company in products & services for Travel & Hospitality",
+    "company_type": "IT Product",
+    "company_industry": "Tourism and Hospitality Services",
+    "company_size": "51-150\nemployees",
+    "country": "Vietnam",
     "working_days": "Monday - Friday",
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4620",
+    "job_id": "4620",
     "job_url": "https://itviec.com/it-jobs/senior-net-engineer-with-azure-skills-code-leap-4620?lab_feature=preview_jd_page",
     "title": "Senior .NET Engineer (with Azure skills)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "CODE LEAP",
     "location": "101 Nguyen Cuu Van, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 08:15:12",
+    "posted_datetime": "2026-04-14 08:19:42",
     "skills": [
       ".NET",
       "Azure",
@@ -902,14 +869,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-5258",
+    "job_id": "5258",
     "job_url": "https://itviec.com/it-jobs/it-system-support-engineer-brse-presales-tieng-nhat-systemexe-viet-nam-5258?lab_feature=preview_jd_page",
     "title": "IT System Support Engineer/BrSE/PreSales (tiếng Nhật)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "SystemEXE Việt Nam",
     "location": "Tòa HITC, Xuân Thủy, P. Dịch Vọng Hậu, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 08:15:14",
+    "posted_datetime": "2026-04-14 08:19:45",
     "skills": [
       "ERP",
       "Japanese IT Communication"
@@ -937,14 +904,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-0705",
+    "job_id": "0705",
     "job_url": "https://itviec.com/it-jobs/java-leader-capgemini-vietnam-0705?lab_feature=preview_jd_page",
     "title": "Java Leader",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Capgemini Vietnam",
     "location": "106 Nguyen Van Troi, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 08:15:17",
+    "posted_datetime": "2026-04-14 08:19:48",
     "skills": [
       "Java",
       "Spring Boot",
@@ -977,14 +944,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3334",
+    "job_id": "3334",
     "job_url": "https://itviec.com/it-jobs/project-manager-nakivo-3334?lab_feature=preview_jd_page",
     "title": "Project Manager",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Nakivo",
     "location": "TGI Building, 208 Nguyen Trai, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 08:15:19",
+    "posted_datetime": "2026-04-14 08:19:51",
     "skills": [
       "Project Management",
       "Waterfall Methodology",
@@ -1016,14 +983,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-1811",
+    "job_id": "1811",
     "job_url": "https://itviec.com/it-jobs/quan-tri-chinh-sach-va-rui-ro-antt-qlrr-4m018-msb-1811?lab_feature=preview_jd_page",
     "title": "Quản trị Chính sách và rủi ro ANTT - QLRR - 4M018",
-    "salary": "Sign in to view salary",
+    "salary": "Very attractive!!!",
     "company_name": "MSB",
     "location": "ROX Tower, 54A Nguyen Chi Thanh, phuong Lang Thuong, Ha Noi",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 09:15:22",
+    "posted_datetime": "2026-04-14 09:19:52",
     "skills": [
       "Security",
       "ISO 27001",
@@ -1055,14 +1022,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-0315",
+    "job_id": "0315",
     "job_url": "https://itviec.com/it-jobs/senior-back-end-developer-python-ai-ml-integration-simpson-strong-tie-vietnam-0315?lab_feature=preview_jd_page",
     "title": "Senior Back-End Developer (Python, AI/ML, Integration)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Simpson Strong-Tie Vietnam",
     "location": "9th Floor, Etown 6 Building, 364 Cong Hoa Street, Ward 13, Tan Binh District, Ho Chi Minh City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 10:15:25",
+    "posted_datetime": "2026-04-14 10:19:54",
     "skills": [
       "Python",
       "C#",
@@ -1094,14 +1061,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3132",
+    "job_id": "3132",
     "job_url": "https://itviec.com/it-jobs/data-engineer-vnggames-3132?lab_feature=preview_jd_page",
     "title": "Data Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "VNGGames",
     "location": "Z06 Street No. 13, Tan Thuan Dong Ward, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 11:15:27",
+    "posted_datetime": "2026-04-14 11:19:56",
     "skills": [
       "Apache Spark",
       "Apache Airflow",
@@ -1133,14 +1100,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3819",
+    "job_id": "3819",
     "job_url": "https://itviec.com/it-jobs/game-developer-unity-c-athena-studio-3819?lab_feature=preview_jd_page",
     "title": "Game Developer (Unity, C#)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Athena Studio",
     "location": "40A Lam Sơn, Phường 2, Ho Chi Minh",
     "work_mode": "At office",
-    "posted_datetime": "2026-04-14 11:15:29",
+    "posted_datetime": "2026-04-14 11:19:59",
     "skills": [
       "Unity",
       "English",
@@ -1172,14 +1139,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-5150",
+    "job_id": "5150",
     "job_url": "https://itviec.com/it-jobs/senior-ai-engineer-aiml-cv-ocr-yolo-python-pytorch-simpson-strong-tie-vietnam-5150?lab_feature=preview_jd_page",
     "title": "Senior AI Engineer (AIML/CV/OCR, Yolo, Python, Pytorch)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "Simpson Strong-Tie Vietnam",
     "location": "9th Floor, Etown 6 Building, 364 Cong Hoa Street, Ward 13, Tan Binh District, Ho Chi Minh City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:32",
+    "posted_datetime": "2026-04-14 11:20:02",
     "skills": [
       "AI",
       "PyTorch",
@@ -1211,14 +1178,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-1200",
+    "job_id": "1200",
     "job_url": "https://itviec.com/it-jobs/hcm-senior-backend-engineer-ai-data-platform-one-mount-group-1200?lab_feature=preview_jd_page",
     "title": "(HCM) Senior Backend Engineer (AI/Data Platform)",
-    "salary": "Sign in to view salary",
+    "salary": "2,000 - 3,000 USD",
     "company_name": "One Mount Group",
     "location": "6th Floor, Lumiere Riverside - West Tower, 275 Vo Nguyen Giap, An Phu Ward, District 2, Thu Duc City, Ho Chi Minh City, Ho Chi Minh",
     "work_mode": "Tower 2 (T26) Times City, 458 Minh Khai, Ha Noi",
-    "posted_datetime": "2026-04-14 11:15:35",
+    "posted_datetime": "2026-04-14 11:20:04",
     "skills": [
       "Spring Boot",
       "Spring",
@@ -1247,14 +1214,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-3723",
+    "job_id": "3723",
     "job_url": "https://itviec.com/it-jobs/senior-fullstack-engineer-itviec-recruitment-consulting-3723?lab_feature=preview_jd_page",
     "title": "Senior Fullstack Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "ITviec Recruitment Consulting",
     "location": "City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:38",
+    "posted_datetime": "2026-04-14 11:20:07",
     "skills": [
       "Python",
       "Angular",
@@ -1289,14 +1256,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4341",
+    "job_id": "4341",
     "job_url": "https://itviec.com/it-jobs/operation-support-engineer-itviec-recruitment-consulting-4341?lab_feature=preview_jd_page",
     "title": "Operation Support Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "ITviec Recruitment Consulting",
     "location": "City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:40",
+    "posted_datetime": "2026-04-14 11:20:10",
     "skills": [
       "Python",
       "DevOps",
@@ -1331,14 +1298,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4015",
+    "job_id": "4015",
     "job_url": "https://itviec.com/it-jobs/senior-data-engineer-python-ai-llm-itviec-recruitment-consulting-4015?lab_feature=preview_jd_page",
     "title": "Senior Data Engineer (Python, AI/LLM)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "ITviec Recruitment Consulting",
     "location": "City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:43",
+    "posted_datetime": "2026-04-14 11:20:12",
     "skills": [
       "Python",
       "Database",
@@ -1373,14 +1340,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-5324",
+    "job_id": "5324",
     "job_url": "https://itviec.com/it-jobs/senior-backend-engineer-python-java-php-ruby-itviec-recruitment-consulting-5324?lab_feature=preview_jd_page",
     "title": "Senior Backend Engineer (Python, Java, PHP, Ruby)",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "ITviec Recruitment Consulting",
     "location": "City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:46",
+    "posted_datetime": "2026-04-14 11:20:14",
     "skills": [
       "PHP",
       "Kubernetes",
@@ -1413,14 +1380,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-5054",
+    "job_id": "5054",
     "job_url": "https://itviec.com/it-jobs/senior-c-engineer-itviec-recruitment-consulting-5054?lab_feature=preview_jd_page",
     "title": "Senior C++ Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "ITviec Recruitment Consulting",
     "location": "City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:48",
+    "posted_datetime": "2026-04-14 11:20:16",
     "skills": [
       "C++",
       "Linux",
@@ -1454,14 +1421,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-4858",
+    "job_id": "4858",
     "job_url": "https://itviec.com/it-jobs/operation-engineer-itviec-recruitment-consulting-4858?lab_feature=preview_jd_page",
     "title": "Operation Engineer",
-    "salary": "Sign in to view salary",
+    "salary": "You'll love it",
     "company_name": "ITviec Recruitment Consulting",
     "location": "City, Ho Chi Minh",
     "work_mode": "Hybrid",
-    "posted_datetime": "2026-04-14 11:15:50",
+    "posted_datetime": "2026-04-14 11:20:18",
     "skills": [
       "Python",
       "Linux",
@@ -1495,14 +1462,14 @@
     "overtime_policy": "No OT"
   },
   {
-    "job_id": "itviec-0555",
+    "job_id": "0555",
     "job_url": "https://itviec.com/it-jobs/qa-lead-qa-process-architect-acceleratorapp-0555?lab_feature=preview_jd_page",
     "title": "QA Lead & QA Process Architect",
-    "salary": "Sign in to view salary",
+    "salary": "1,000 - 2,500 USD",
     "company_name": "AcceleratorApp",
     "location": "Overseas",
     "work_mode": "Remote",
-    "posted_datetime": "2026-04-14 16:15:53",
+    "posted_datetime": "2026-04-14 16:20:21",
     "skills": [
       "PQA",
       "Automation Test",
@@ -1527,6 +1494,38 @@
     "company_industry": "Software Products and Web Services",
     "company_size": "1-50\nemployees",
     "country": "Portugal",
+    "working_days": "Monday - Friday",
+    "overtime_policy": "No OT"
+  },
+  {
+    "job_id": "5523",
+    "job_url": "https://itviec.com/it-jobs/ims-developer-cobol-capgemini-vietnam-5523?lab_feature=preview_jd_page",
+    "title": "IMS Developer (Cobol)",
+    "salary": "You'll love it",
+    "company_name": "Capgemini Vietnam",
+    "location": "106 Nguyen Van Troi, Ho Chi Minh",
+    "work_mode": "At office",
+    "posted_datetime": "2026-04-14 18:20:23",
+    "skills": [
+      "COBOL",
+      "English"
+    ],
+    "job_expertise": [
+      "Backend Developer"
+    ],
+    "job_domains": [
+      "Insurance",
+      "IT Services and IT Consulting"
+    ],
+    "top_reasons": [],
+    "description": "Works with members of the development team and is responsible development, and implementation of\nsoftware applications.\nReport directly to the Project Manager/Team Leader\nWork with project team members and support functions\nEnsure to meeting the development goal and deadline.\nDevelop software\nWrite design/implementation documentation\nParticipate in design/code reviews\nCreate, test, maintain and troubleshoot software\nCreate prototype/test applications\nWork with members of project teams to ensure specifications are satisfied",
+    "requirements": "Bachelor Degree in Computer Science/ related degree with at least 2 year of working experience in Cobol, IMS\nAble to communicate in English is mandatory",
+    "benefits": "Competitive salary, health insurance covered for employee and dependents.\nWorking on international projects. Professional and dynamic working environment\nAchieving valuable experience with variety projects, new technologies and hundreds of talents\nReceiving training opportunities including many technical seminars and soft skill training courses\nGood opportunity for promotion through regular performance review system.",
+    "company_full_name": "One of the world leading company in IT services",
+    "company_type": "IT Service and IT Consulting",
+    "company_industry": "IT Services and IT Consulting",
+    "company_size": "301-500\nemployees",
+    "country": "France",
     "working_days": "Monday - Friday",
     "overtime_policy": "No OT"
   }
