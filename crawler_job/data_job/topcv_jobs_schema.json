@@ -11,11 +11,11 @@
     "company_industry": "Sản xuất",
     "country": null,
     "salary_raw": "10 - 15 triệu",
-    "salary_min": 10,
-    "salary_max": 15,
-    "salary_currency": "VND (million)",
+    "salary_min": 10000000,
+    "salary_max": 15000000,
+    "salary_currency": "VND",
     "salary_negotiable": false,
-    "location_raw": "-\nHồ Chí Minh:\n111/31 đường số 16 (địa chỉ mới), Phường Hiệp Bình (Thành phố Thủ Đức cũ)",
+    "location_raw": "Hồ Chí Minh (mới), -\nHồ Chí Minh:\n111/31 đường số 16 (địa chỉ mới), Phường Hiệp Bình (Thành phố Thủ Đức cũ)",
     "locations": [
       "ho_chi_minh"
     ],
@@ -50,11 +50,11 @@
     "company_industry": "IT - Phần mềm",
     "country": null,
     "salary_raw": "Từ 25 triệu",
-    "salary_min": 25,
-    "salary_max": 25,
-    "salary_currency": "VND (million)",
+    "salary_min": 25000000,
+    "salary_max": 25000000,
+    "salary_currency": "VND",
     "salary_negotiable": false,
-    "location_raw": "-\nHà Nội:\nLê Đức Thọ, Phường Từ Liêm (quận Nam Từ Liêm cũ)",
+    "location_raw": "Hà Nội, -\nHà Nội:\nLê Đức Thọ, Phường Từ Liêm (quận Nam Từ Liêm cũ)",
     "locations": [
       "ha_noi"
     ],

@@ -11,13 +11,11 @@ OUTPUT_FILE = Path(__file__).parent.parent / "data_job" / "topcv_jobs_schema.jso
 
 
 class DateTimeEncoder(json.JSONEncoder):
-    """Custom JSON encoder for datetime and date objects"""
     def default(self, obj):
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
         return super().default(obj)
 
-# --- Location Mapping ---
 LOCATION_MAPPING = {
     "ha_noi": ["Hà Nội", "Ha Noi", "ha noi", "Hanoi", "hanoi"],
     "tuyen_quang": ["Tuyên Quang", "Tuyen Quang", "tuyen quang", "Hà Giang", "Ha Giang", "ha giang"],
@@ -102,12 +100,173 @@ class JobSchema(BaseModel):
     requirements: Optional[str] = None
     benefits: Optional[str] = None
 
+    # Helpers for model_validator
+    @staticmethod
+    def _sync_posted_fields(data: dict) -> dict:
+        if not data.get("posted_date") and data.get("posted_at"):
+            data["posted_date"] = data["posted_at"]
+        if not data.get("posted_date") and data.get("posted_datetime"):
+            data["posted_date"] = data["posted_datetime"]
+        return data
+
+    @staticmethod
+    def _set_company_industry(data: dict) -> dict:
+        if not data.get("company_industry") and data.get("company_type"):
+            data["company_industry"] = data["company_type"]
+        return data
+
+    @staticmethod
+    def _parse_salary_fields(data: dict) -> dict:
+        NEGOTIABLE_KEYWORDS = {"thoa thuan", "negotiable", "thoả thuận", "thỏa thuận", "agreement"}
+        CURRENCY_MAP = {
+            "usd": "USD", "$": "USD",
+            "eur": "EUR", "€": "EUR",
+            "gbp": "GBP", "£": "GBP",
+            "jpy": "JPY", "¥": "JPY",
+            "vnd": "VND", "₫": "VND",
+            "triệu": "VND_MILLION", "trieu": "VND_MILLION", "tr": "VND_MILLION",
+            "nghìn": "VND_THOUSAND", "nghin": "VND_THOUSAND", "k": "VND_THOUSAND",
+        }
+
+        salary_raw = str(data.get("salary") or data.get("salary_raw") or "").strip()
+        if not salary_raw:
+            return data
+
+        salary_normalized = salary_raw.lower()
+
+        if any(kw in salary_normalized for kw in NEGOTIABLE_KEYWORDS):
+            data["salary_negotiable"] = True
+            return data
+
+        try:
+            cleaned = re.sub(r'(?<=\d)[\s.](?=\d{3})', '', salary_raw)
+            numbers = re.findall(r'\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?', cleaned)
+            cleaned_nums = [float(n.replace(',', '')) for n in numbers]
+
+            if cleaned_nums:
+                data["salary_min"] = min(cleaned_nums)
+                data["salary_max"] = max(cleaned_nums)
+
+            matched_currency = None
+            for token, normalized in sorted(CURRENCY_MAP.items(), key=lambda x: -len(x[0])):
+                if token in salary_normalized:
+                    matched_currency = normalized
+                    break
+
+            if matched_currency:
+                if matched_currency == "VND_MILLION":
+                    data["salary_min"] = int(data["salary_min"] * 1_000_000) if data.get("salary_min") else None
+                    data["salary_max"] = int(data["salary_max"] * 1_000_000) if data.get("salary_max") else None
+                    data["salary_currency"] = "VND"
+                elif matched_currency == "VND_THOUSAND":
+                    data["salary_min"] = int(data["salary_min"] * 1_000) if data.get("salary_min") else None
+                    data["salary_max"] = int(data["salary_max"] * 1_000) if data.get("salary_max") else None
+                    data["salary_currency"] = "VND"
+                else:
+                    data["salary_currency"] = matched_currency
+                    if data.get("salary_min") and data["salary_min"] == int(data["salary_min"]):
+                        data["salary_min"] = int(data["salary_min"])
+                    if data.get("salary_max") and data["salary_max"] == int(data["salary_max"]):
+                        data["salary_max"] = int(data["salary_max"])
+            else:
+                data["salary_currency"] = "UNKNOWN"
+
+        except Exception as e:
+            data["salary_parse_error"] = f"Parse failed: '{salary_raw}' — {e}"
+
+        return data
+
+    @staticmethod
+    def _map_topcv_fields(data: dict) -> dict:
+        if "company" in data and "company_name" not in data:
+            data["company_name"] = data["company"]
+        if "working_days" in data and "work_mode_days" not in data:
+            data["work_mode_days"] = data["working_days"]
+
+        if "job_expertise" in data and isinstance(data["job_expertise"], list) and data["job_expertise"]:
+            if "job_level" not in data or not data["job_level"]:
+                data["job_level"] = str(data["job_expertise"][0]).lower()
+            if "job_domains" not in data or not data["job_domains"]:
+                data["job_domains"] = [str(exp).lower() for exp in data["job_expertise"]]
+        elif "job_level" in data and data["job_level"]:
+            data["job_level"] = str(data["job_level"]).lower()
+
+        if "experience" in data and "experience_years_min" not in data:
+            exp_str = str(data.get("experience", "")).lower()
+            try:
+                if "năm" in exp_str:
+                    nums = re.findall(r'\d+', exp_str)
+                    if nums:
+                        data["experience_years_min"] = int(nums[0])
+            except:
+                pass
+
+        if "hiring_quantity" in data and data["hiring_quantity"]:
+            qty_str = str(data["hiring_quantity"]).lower()
+            if "người" in qty_str or "person" in qty_str:
+                try:
+                    nums = re.findall(r'\d+', qty_str)
+                    if nums:
+                        data["hiring_quantity"] = int(nums[0])
+                except:
+                    pass
+
+        if "detail_requirements" in data and data["detail_requirements"]:
+            if "requirements" not in data or not data["requirements"]:
+                data["requirements"] = data["detail_requirements"]
+            else:
+                data["requirements"] = str(data["requirements"]) + "\n" + str(data["detail_requirements"])
+
+        if "detail_benefit" in data and data["detail_benefit"]:
+            if "benefits" not in data or not data["benefits"]:
+                data["benefits"] = data["detail_benefit"]
+            else:
+                data["benefits"] = str(data["benefits"]) + "\n" + str(data["detail_benefit"])
+
+        location_parts = []
+        for key in ("location", "detail_location", "detail_locations"):
+            val = data.get(key)
+            if val:
+                location_parts.append(str(val).strip())
+        if location_parts:
+            data["location_raw"] = ", ".join(location_parts)
+        data.pop("location", None)
+
+        if "requirements_tags" in data and isinstance(data["requirements_tags"], list) and data["requirements_tags"]:
+            tags_str = " | ".join(data["requirements_tags"])
+            if data.get("requirements"):
+                data["requirements"] = str(data["requirements"]) + f"\n\n[Others: {tags_str}]"
+            else:
+                data["requirements"] = f"[Others: {tags_str}]"
+
+        if "benefits_tags" in data and isinstance(data["benefits_tags"], list) and data["benefits_tags"]:
+            tags_str = " | ".join(data["benefits_tags"])
+            if data.get("benefits"):
+                data["benefits"] = str(data["benefits"]) + f"\n\n[Others: {tags_str}]"
+            else:
+                data["benefits"] = f"[Others: {tags_str}]"
+
+        return data
+
+    # Single model_validator (before)
+    @model_validator(mode="before")
+    @classmethod
+    def preprocess(cls, data: dict) -> dict:
+        data = cls._sync_posted_fields(data)
+        data = cls._set_company_industry(data)
+        data = cls._map_topcv_fields(data)
+        data = cls._parse_salary_fields(data)
+        return data
+
+    # -------------------------
+    # Field validators
+    # -------------------------
     @field_validator("work_mode", mode="before")
     @classmethod
     def normalize_work_mode(cls, v: Any) -> str:
         if not v:
             return "onsite"
-        
+
         s = str(v).lower().strip()
         s = (s
             .replace("à","a").replace("á","a").replace("ả","a").replace("ã","a").replace("ạ","a")
@@ -179,11 +338,9 @@ class JobSchema(BaseModel):
         for pattern in HYBRID_PATTERNS:
             if re.search(pattern, s):
                 return "hybrid"
-
         for pattern in REMOTE_PATTERNS:
             if re.search(pattern, s):
                 return "remote"
-
         for pattern in ONSITE_PATTERNS:
             if re.search(pattern, s):
                 return "onsite"
@@ -193,12 +350,9 @@ class JobSchema(BaseModel):
     @field_validator("locations", mode="before")
     @classmethod
     def handle_location_mapping(cls, v: Any, info: Any) -> List[str]:
-        # Lấy trực tiếp từ 'location' (key của input mẫu)
         raw = str(v) if v else str(info.data.get("location", ""))
-        # Split by multiple separators: comma, pipe, semicolon, dash, ampersand
-        parts = re.split(r'[,|;\-&]', raw)
+        parts = re.split(r'[,|;&]|\s+-\s+', raw)
         mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
-        # Remove duplicates while preserving order
         seen = set()
         result = []
         for m in mapped:
@@ -206,179 +360,28 @@ class JobSchema(BaseModel):
                 result.append(m)
                 seen.add(m)
         return result
-    
-    @model_validator(mode="before")
-    def parse_salary_fields(self) -> dict:
-        # Parse salary_raw to extract min and max values and currency
-        salary_raw = str(self.get("salary") or self.get("salary_raw") or "")
-        if salary_raw and "thoa thuan" not in salary_raw.lower() and "negotiable" not in salary_raw.lower():
-            try:
-                # Extract numbers with optional commas
-                numbers = re.findall(r'[\d,]+', salary_raw)
-                if numbers:
-                    # Clean numbers (remove commas and convert to int)
-                    cleaned_nums = [int(num.replace(',', '')) for num in numbers]
-                    if cleaned_nums:
-                        self["salary_min"] = min(cleaned_nums)
-                        self["salary_max"] = max(cleaned_nums)
-                
-                # Extract currency unit
-                # Match USD, VND, EUR, etc. or Vietnamese units like triệu, nghìn
-                currency_match = re.search(r'(USD|VND|EUR|GBP|JPY|triệu|ngh\w+n|\$|€|¥|₹)', salary_raw, re.IGNORECASE)
-                if currency_match:
-                    currency = currency_match.group(1).lower()
-                    # Normalize Vietnamese currency
-                    if currency == "triệu" or currency == "triệu":
-                        self["salary_currency"] = "VND (million)"
-                    elif "ngh" in currency:
-                        self["salary_currency"] = "VND (thousand)"
-                    elif currency == "$":
-                        self["salary_currency"] = "USD"
-                    elif currency == "€":
-                        self["salary_currency"] = "EUR"
-                    elif currency == "¥":
-                        self["salary_currency"] = "JPY"
-                    else:
-                        self["salary_currency"] = currency.upper()
-            except:
-                pass
-        return self
 
-    @model_validator(mode="before")
-    def set_company_industry_from_type(self) -> dict:
-        # If company_industry is not provided, try to get it from company_type
-        if not self.get("company_industry") and self.get("company_type"):
-            self["company_industry"] = self["company_type"]
-        return self
+    @field_validator("company_size", mode="before")
+    @classmethod
+    def normalize_company_size(cls, v: Any) -> Optional[str]:
+        if not v:
+            return None
 
-    @model_validator(mode="before")
-    def sync_posted_fields(self) -> dict:
-        # Keep compatibility with older keys and crawler versions
-        if not self.get("posted_date") and self.get("posted_at"):
-            self["posted_date"] = self["posted_at"]
-        if not self.get("posted_date") and self.get("posted_datetime"):
-            self["posted_date"] = self["posted_datetime"]
-        return self
-    
-    @model_validator(mode="before")
-    def map_topcv_fields(self) -> dict:
-        # Map TopCV specific fields to schema fields
-        if "company" in self and "company_name" not in self:
-            self["company_name"] = self["company"]
-        if "working_days" in self and "work_mode_days" not in self:
-            self["work_mode_days"] = self["working_days"]
-        
-        # Extract job_level from job_expertise or job_level field
-        if "job_expertise" in self and isinstance(self["job_expertise"], list) and self["job_expertise"]:
-            if "job_level" not in self or not self["job_level"]:
-                self["job_level"] = str(self["job_expertise"][0]).lower()
-            # Also populate job_domains with all job_expertise items
-            if "job_domains" not in self or not self["job_domains"]:
-                self["job_domains"] = [str(exp).lower() for exp in self["job_expertise"]]
-        elif "job_level" in self and self["job_level"]:
-            self["job_level"] = str(self["job_level"]).lower()
-        
-        # Extract experience_years_min from experience field
-        if "experience" in self and "experience_years_min" not in self:
-            exp_str = str(self.get("experience", "")).lower()
-            try:
-                if "năm" in exp_str:
-                    # Extract number from "3 năm", "2 năm", etc.
-                    nums = re.findall(r'\d+', exp_str)
-                    if nums:
-                        self["experience_years_min"] = int(nums[0])
-            except:
-                pass
-        
-        # Parse hiring_quantity
-        if "hiring_quantity" in self and self["hiring_quantity"]:
-            qty_str = str(self["hiring_quantity"]).lower()
-            if "người" in qty_str or "person" in qty_str:
-                try:
-                    nums = re.findall(r'\d+', qty_str)
-                    if nums:
-                        self["hiring_quantity"] = int(nums[0])
-                except:
-                    pass
-        
-        # Merge detail_requirements into requirements
-        if "detail_requirements" in self and self["detail_requirements"]:
-            if "requirements" not in self or not self["requirements"]:
-                self["requirements"] = self["detail_requirements"]
-            else:
-                self["requirements"] = str(self["requirements"]) + "\n" + str(self["detail_requirements"])
-        
-        # Merge detail_benefit into benefits
-        if "detail_benefit" in self and self["detail_benefit"]:
-            if "benefits" not in self or not self["benefits"]:
-                self["benefits"] = self["detail_benefit"]
-            else:
-                self["benefits"] = str(self["benefits"]) + "\n" + str(self["detail_benefit"])
-        
-        # Prioritize detail_location or detail_locations for location_raw
-        # Note: must rename "location" to "location_raw" to avoid alias overwriting
-        if "detail_location" in self and self["detail_location"]:
-            if "location" in self:
-                del self["location"]  # Remove so alias doesn't overwrite
-            self["location_raw"] = self["detail_location"]
-        elif "detail_locations" in self and self["detail_locations"]:
-            if "location" in self:
-                del self["location"]  # Remove so alias doesn't overwrite
-            self["location_raw"] = self["detail_locations"]
-        elif "location" in self and self["location"]:
-            # Rename location to location_raw using alias
-            self["location_raw"] = self["location"]
-            del self["location"]
-        
-        # Append requirements_tags to requirements if available
-        if "requirements_tags" in self and isinstance(self["requirements_tags"], list) and self["requirements_tags"]:
-            tags_str = " | ".join(self["requirements_tags"])
-            if self.get("requirements"):
-                self["requirements"] = str(self["requirements"]) + f"\n\n[Others: {tags_str}]"
-            else:
-                self["requirements"] = f"[Others: {tags_str}]"
-        
-        # Append benefits_tags to benefits
-        if "benefits_tags" in self and isinstance(self["benefits_tags"], list) and self["benefits_tags"]:
-            tags_str = " | ".join(self["benefits_tags"])
-            if self.get("benefits"):
-                self["benefits"] = str(self["benefits"]) + f"\n\n[Others: {tags_str}]"
-            else:
-                self["benefits"] = f"[Others: {tags_str}]"
-        
-        return self
-    
-    @model_validator(mode="after")
-    def populate_locations_and_negotiable(self) -> "JobSchema":
-        # Populate locations from location_raw if empty
-        if not self.locations and self.location_raw:
-            # Split by multiple separators: comma, pipe, semicolon, dash, ampersand
-            parts = re.split(r'[,|;\-&()]', self.location_raw)
-            mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
-            # Remove duplicates while preserving order
-            seen = set()
-            result = []
-            for m in mapped:
-                if m and m not in seen:
-                    result.append(m)
-                    seen.add(m)
-            self.locations = result
-        
-        # Check if salary is negotiable
-        if self.salary_raw:
-            raw = str(self.salary_raw).lower()
-            if re.search(r"(thoa.*thuan|negotiable|canh.*tranh|thuong.*luong|t\.t|tt|upto|you.*ll love|love it)", raw):
-                self.salary_negotiable = True
-        
-        # Ensure requirements field is populated
-        if not self.requirements and self.description:
-            self.requirements = self.description[:500]
-        
-        # Ensure benefits field is populated
-        if not self.benefits:
-            self.benefits = None
-        
-        return self
+        s = str(v).lower().strip()
+        s = re.sub(r'\b(nhan\s*vien|nhân\s*viên|nguoi|người|employees?|staffs?)\b', '', s, flags=re.IGNORECASE)
+        s = re.sub(r'\s{2,}', ' ', s).strip(' ,;:-')
+
+        if not s or not re.search(r'\d', s):
+            return None
+
+        s = re.sub(r'(\d),(\d)', r'\1\2', s)
+        s = re.sub(r'\b(hon|hơn|over|tren|trên|more\s*than|greater\s*than)\s*(\d+)', r'>\2', s, flags=re.IGNORECASE)
+        s = re.sub(r'\b(duoi|dưới|under|less\s*than|fewer\s*than)\s*(\d+)', r'<\2', s, flags=re.IGNORECASE)
+        s = re.sub(r'(\d+)\s*\+', r'>\1', s)
+        s = re.sub(r'\s*[-–—~]\s*', '-', s)
+        s = re.sub(r'\s+(to|toi|tới|đến|den)\s+', '-', s, flags=re.IGNORECASE)
+
+        return s.strip() or None
 
     @field_validator("education", mode="before")
     @classmethod
@@ -400,51 +403,44 @@ class JobSchema(BaseModel):
         if not v:
             return None
         try:
-            # Try parsing DD/MM/YYYY format (TopCV format)
             if isinstance(v, str) and "/" in v:
                 parts = v.split("/")
                 if len(parts) == 3:
                     day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
                     return date(year, month, day)
-            # Try standard parsing
             if isinstance(v, str):
                 return date.fromisoformat(v)
             return v
         except:
             return None
 
-    @field_validator("company_size", mode="before")
-    @classmethod
-    def normalize_company_size(cls, v: Any) -> Optional[str]:
-        if not v:
-            return None
+    @model_validator(mode="after")
+    def populate_locations_and_negotiable(self) -> "JobSchema":
+        if not self.locations and self.location_raw:
+            # ✅ Chỉ split dash khi có space ở 2 phía
+            parts = re.split(r'[,|;&()]|\s+-\s+', self.location_raw)
+            mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
+            seen = set()
+            result = []
+            for m in mapped:
+                if m and m not in seen:
+                    result.append(m)
+                    seen.add(m)
+            self.locations = result
 
-        s = str(v).lower().strip()
+        if self.salary_raw:
+            raw = str(self.salary_raw).lower()
+            if re.search(r"(thoa.*thuan|negotiable|canh.*tranh|thuong.*luong|t\.t\b|\btt\b|upto|you.{0,5}ll\s*love|love\s*it)", raw):
+                self.salary_negotiable = True
 
-        # Strip unit words
-        s = re.sub(r'\b(nhan\s*vien|nhân\s*viên|nguoi|người|employees?|staffs?)\b', '', s, flags=re.IGNORECASE)
-        s = re.sub(r'\s{2,}', ' ', s).strip(' ,;:-')
+        if not self.requirements and self.description:
+            self.requirements = self.description[:500]
 
-        if not s:
-            return None
+        if not self.benefits:
+            self.benefits = None
 
-        # Remove commas in numbers: 1,000 → 1000
-        s = re.sub(r'(\d),(\d)', r'\1\2', s)
+        return self
 
-        # Normalize "hơn 1000" / "over 1000" / "more than 1000" → ">1000"
-        s = re.sub(r'\b(hon|hơn|over|tren|trên|more\s*than|greater\s*than)\s*(\d+)', r'>\2', s, flags=re.IGNORECASE)
-
-        # Normalize "dưới 50" / "under 50" / "less than 50" → "<50"
-        s = re.sub(r'\b(duoi|dưới|under|less\s*than|fewer\s*than)\s*(\d+)', r'<\2', s, flags=re.IGNORECASE)
-
-        # Normalize "1000+" → ">1000"
-        s = re.sub(r'(\d+)\s*\+', r'>\1', s)
-
-        # Normalize range separators → "min-max"
-        s = re.sub(r'\s*[-–—~]\s*', '-', s)
-        s = re.sub(r'\s+(to|toi|tới|đến|den)\s+', '-', s, flags=re.IGNORECASE)
-
-        return s.strip() or None
 
 if __name__ == "__main__":
     # Load data from JSON file
@@ -480,7 +476,7 @@ if __name__ == "__main__":
     # Save processed data to file
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(processed_jobs, f, indent=2, ensure_ascii=False, cls=DateTimeEncoder)
-    
+
     print(f"✓ Processed {len(processed_jobs)} jobs successfully")
     print(f"✓ Output saved to: {output_file.name}")
     print(f"  File size: {output_file.stat().st_size / 1024:.1f} KB") if output_file.exists() else None

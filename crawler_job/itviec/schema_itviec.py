@@ -11,13 +11,11 @@ OUTPUT_FILE = Path(__file__).parent.parent / "data_job" / "itviec_jobs_schema.js
 
 
 class DateTimeEncoder(json.JSONEncoder):
-    """Custom JSON encoder for datetime and date objects"""
     def default(self, obj):
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
         return super().default(obj)
 
-# --- Location Mapping ---
 LOCATION_MAPPING = {
     "ha_noi": ["Hà Nội", "Ha Noi", "ha noi", "Hanoi", "hanoi"],
     "tuyen_quang": ["Tuyên Quang", "Tuyen Quang", "tuyen quang", "Hà Giang", "Ha Giang", "ha giang"],
@@ -102,6 +100,110 @@ class JobSchema(BaseModel):
     requirements: Optional[str] = None
     benefits: Optional[str] = None
 
+    # Helpers for model_validator
+    @staticmethod
+    def _sync_posted_fields(data: dict) -> dict:
+        if not data.get("posted_date") and data.get("posted_at"):
+            data["posted_date"] = data["posted_at"]
+        if not data.get("posted_date") and data.get("posted_datetime"):
+            data["posted_date"] = data["posted_datetime"]
+        return data
+
+    @staticmethod
+    def _set_company_industry(data: dict) -> dict:
+        if not data.get("company_industry") and data.get("company_type"):
+            data["company_industry"] = data["company_type"]
+        return data
+
+    @staticmethod
+    def _map_itviec_fields(data: dict) -> dict:
+        if "job_expertise" in data and isinstance(data["job_expertise"], list) and data["job_expertise"]:
+            if "job_level" not in data or not data["job_level"]:
+                data["job_level"] = str(data["job_expertise"][0]).lower()
+            if "job_domains" not in data or not data["job_domains"]:
+                data["job_domains"] = [str(exp).lower() for exp in data["job_expertise"]]
+
+        if "top_reasons" in data and isinstance(data["top_reasons"], list) and data["top_reasons"]:
+            reasons_str = ";".join(data["top_reasons"])
+            if data.get("benefits"):
+                data["benefits"] = str(data["benefits"]) + f"\n\n[Others: {reasons_str}]"
+            else:
+                data["benefits"] = f"[Others: {reasons_str}]"
+
+        return data
+
+    @staticmethod
+    def _parse_salary_fields(data: dict) -> dict:
+        NEGOTIABLE_KEYWORDS = {"thoa thuan", "negotiable", "thoả thuận", "thỏa thuận", "agreement"}
+        CURRENCY_MAP = {
+            "usd": "USD", "$": "USD",
+            "eur": "EUR", "€": "EUR",
+            "gbp": "GBP", "£": "GBP",
+            "jpy": "JPY", "¥": "JPY",
+            "vnd": "VND", "₫": "VND",
+            "triệu": "VND_MILLION", "trieu": "VND_MILLION", "tr": "VND_MILLION",
+            "nghìn": "VND_THOUSAND", "nghin": "VND_THOUSAND", "k": "VND_THOUSAND",
+        }
+
+        salary_raw = str(data.get("salary") or data.get("salary_raw") or "").strip()
+        if not salary_raw:
+            return data
+
+        salary_normalized = salary_raw.lower()
+
+        if any(kw in salary_normalized for kw in NEGOTIABLE_KEYWORDS):
+            data["salary_negotiable"] = True
+            return data
+
+        try:
+            cleaned = re.sub(r'(?<=\d)[\s.](?=\d{3})', '', salary_raw)
+            numbers = re.findall(r'\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?', cleaned)
+            cleaned_nums = [float(n.replace(',', '')) for n in numbers]
+
+            if cleaned_nums:
+                data["salary_min"] = min(cleaned_nums)
+                data["salary_max"] = max(cleaned_nums)
+
+            matched_currency = None
+            for token, normalized in sorted(CURRENCY_MAP.items(), key=lambda x: -len(x[0])):
+                if token in salary_normalized:
+                    matched_currency = normalized
+                    break
+
+            if matched_currency:
+                if matched_currency == "VND_MILLION":
+                    data["salary_min"] = int(data["salary_min"] * 1_000_000) if data.get("salary_min") else None
+                    data["salary_max"] = int(data["salary_max"] * 1_000_000) if data.get("salary_max") else None
+                    data["salary_currency"] = "VND"
+                elif matched_currency == "VND_THOUSAND":
+                    data["salary_min"] = int(data["salary_min"] * 1_000) if data.get("salary_min") else None
+                    data["salary_max"] = int(data["salary_max"] * 1_000) if data.get("salary_max") else None
+                    data["salary_currency"] = "VND"
+                else:
+                    data["salary_currency"] = matched_currency
+                    if data.get("salary_min") and data["salary_min"] == int(data["salary_min"]):
+                        data["salary_min"] = int(data["salary_min"])
+                    if data.get("salary_max") and data["salary_max"] == int(data["salary_max"]):
+                        data["salary_max"] = int(data["salary_max"])
+            else:
+                data["salary_currency"] = None
+
+        except Exception as e:
+            data["salary_parse_error"] = f"Parse failed: '{salary_raw}' — {e}"
+
+        return data
+
+    # Single model_validator (before)
+    @model_validator(mode="before")
+    @classmethod
+    def preprocess(cls, data: dict) -> dict:
+        data = cls._sync_posted_fields(data)
+        data = cls._set_company_industry(data)
+        data = cls._map_itviec_fields(data)
+        data = cls._parse_salary_fields(data)
+        return data
+
+    # Field validators
     @field_validator("company_size", mode="before")
     @classmethod
     def normalize_company_size(cls, v: Any) -> Optional[str]:
@@ -109,27 +211,16 @@ class JobSchema(BaseModel):
             return None
 
         s = str(v).lower().strip()
-
-        # Strip unit words
         s = re.sub(r'\b(nhan\s*vien|nhân\s*viên|nguoi|người|employees?|staffs?)\b', '', s, flags=re.IGNORECASE)
         s = re.sub(r'\s{2,}', ' ', s).strip(' ,;:-')
 
-        if not s:
+        if not s or not re.search(r'\d', s):
             return None
 
-        # Remove commas in numbers: 1,000 → 1000
         s = re.sub(r'(\d),(\d)', r'\1\2', s)
-
-        # Normalize "hơn 1000" / "over 1000" / "more than 1000" → ">1000"
         s = re.sub(r'\b(hon|hơn|over|tren|trên|more\s*than|greater\s*than)\s*(\d+)', r'>\2', s, flags=re.IGNORECASE)
-
-        # Normalize "dưới 50" / "under 50" / "less than 50" → "<50"
         s = re.sub(r'\b(duoi|dưới|under|less\s*than|fewer\s*than)\s*(\d+)', r'<\2', s, flags=re.IGNORECASE)
-
-        # Normalize "1000+" → ">1000"
         s = re.sub(r'(\d+)\s*\+', r'>\1', s)
-
-        # Normalize range separators → "min-max"
         s = re.sub(r'\s*[-–—~]\s*', '-', s)
         s = re.sub(r'\s+(to|toi|tới|đến|den)\s+', '-', s, flags=re.IGNORECASE)
 
@@ -140,7 +231,7 @@ class JobSchema(BaseModel):
     def normalize_work_mode(cls, v: Any) -> str:
         if not v:
             return "onsite"
-        
+
         s = str(v).lower().strip()
         s = (s
             .replace("à","a").replace("á","a").replace("ả","a").replace("ã","a").replace("ạ","a")
@@ -212,11 +303,9 @@ class JobSchema(BaseModel):
         for pattern in HYBRID_PATTERNS:
             if re.search(pattern, s):
                 return "hybrid"
-
         for pattern in REMOTE_PATTERNS:
             if re.search(pattern, s):
                 return "remote"
-
         for pattern in ONSITE_PATTERNS:
             if re.search(pattern, s):
                 return "onsite"
@@ -226,12 +315,10 @@ class JobSchema(BaseModel):
     @field_validator("locations", mode="before")
     @classmethod
     def handle_location_mapping(cls, v: Any, info: Any) -> List[str]:
-        # Read directly from 'location' (key from raw input)
         raw = str(v) if v else str(info.data.get("location", ""))
-        # Split by multiple separators: comma, pipe, semicolon, dash, ampersand
-        parts = re.split(r'[,|;\-&]', raw)
+        # Only split on commas, semicolons, pipes, ampersands, or " - " to avoid breaking city names that contain spaces
+        parts = re.split(r'[,|;&]|\s+-\s+', raw)
         mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
-        # Remove duplicates while preserving order
         seen = set()
         result = []
         for m in mapped:
@@ -239,88 +326,12 @@ class JobSchema(BaseModel):
                 result.append(m)
                 seen.add(m)
         return result
-    
-    @model_validator(mode="before")
-    def map_itviec_fields(self) -> dict:
-        # Extract job_level and job_domains from job_expertise
-        if "job_expertise" in self and isinstance(self["job_expertise"], list) and self["job_expertise"]:
-            if "job_level" not in self or not self["job_level"]:
-                self["job_level"] = str(self["job_expertise"][0]).lower()
-            # Also populate job_domains with all job_expertise items
-            if "job_domains" not in self or not self["job_domains"]:
-                self["job_domains"] = [str(exp).lower() for exp in self["job_expertise"]]
-        
-        # Append top_reasons to benefits
-        if "top_reasons" in self and isinstance(self["top_reasons"], list) and self["top_reasons"]:
-            reasons_str = ";".join(self["top_reasons"])
-            if self.get("benefits"):
-                self["benefits"] = str(self["benefits"]) + f"\n\n[Others: {reasons_str}]"
-            else:
-                self["benefits"] = f"[Others: {reasons_str}]"
-        
-        return self
-    
-    @model_validator(mode="before")
-    def parse_salary_fields(self) -> dict:
-        # Parse salary_raw to extract min and max values and currency
-        salary_raw = str(self.get("salary") or self.get("salary_raw") or "")
-        if salary_raw and "thoa thuan" not in salary_raw.lower() and "negotiable" not in salary_raw.lower():
-            try:
-                # Extract numbers with optional commas
-                numbers = re.findall(r'[\d,]+', salary_raw)
-                if numbers:
-                    # Clean numbers (remove commas and convert to int)
-                    cleaned_nums = [int(num.replace(',', '')) for num in numbers]
-                    if cleaned_nums:
-                        self["salary_min"] = min(cleaned_nums)
-                        self["salary_max"] = max(cleaned_nums)
-                
-                # Extract currency unit
-                # Match USD, VND, EUR, etc. or Vietnamese units like triệu, nghìn
-                currency_match = re.search(r'(USD|VND|EUR|GBP|JPY|triệu|ngh\w+n|\$|€|¥|₹)', salary_raw, re.IGNORECASE)
-                if currency_match:
-                    currency = currency_match.group(1).lower()
-                    # Normalize Vietnamese currency
-                    if currency == "triệu" or currency == "triệu":
-                        self["salary_currency"] = "VND (million)"
-                    elif "ngh" in currency:
-                        self["salary_currency"] = "VND (thousand)"
-                    elif currency == "$":
-                        self["salary_currency"] = "USD"
-                    elif currency == "€":
-                        self["salary_currency"] = "EUR"
-                    elif currency == "¥":
-                        self["salary_currency"] = "JPY"
-                    else:
-                        self["salary_currency"] = currency.upper()
-            except:
-                pass
-        return self
-    
-    @model_validator(mode="before")
-    def set_company_industry_from_type(self) -> dict:
-        # If company_industry is not provided, try to get it from company_type
-        if not self.get("company_industry") and self.get("company_type"):
-            self["company_industry"] = self["company_type"]
-        return self
 
-    @model_validator(mode="before")
-    def sync_posted_fields(self) -> dict:
-        # Keep compatibility with older keys and crawler versions
-        if not self.get("posted_date") and self.get("posted_at"):
-            self["posted_date"] = self["posted_at"]
-        if not self.get("posted_date") and self.get("posted_datetime"):
-            self["posted_date"] = self["posted_datetime"]
-        return self
-    
     @model_validator(mode="after")
     def populate_locations_and_negotiable(self) -> "JobSchema":
-        # Populate locations from location_raw if empty
         if not self.locations and self.location_raw:
-            # Split by multiple separators: comma, pipe, semicolon, dash, ampersand
-            parts = re.split(r'[,|;\-&()]', self.location_raw)
+            parts = re.split(r'[,|;&()]|\s+-\s+', self.location_raw)
             mapped = [map_to_standard_region(p.strip()) for p in parts if p.strip()]
-            # Remove duplicates while preserving order
             seen = set()
             result = []
             for m in mapped:
@@ -328,19 +339,17 @@ class JobSchema(BaseModel):
                     result.append(m)
                     seen.add(m)
             self.locations = result
-        
-        # Check if salary is negotiable
+
         if self.salary_raw:
             raw = str(self.salary_raw).lower()
-            if re.search(r"(thoa.*thuan|negotiable|canh.*tranh|thuong.*luong|t\.t|tt|upto|you.*ll love|love it)", raw):
+            if re.search(r"(thoa.*thuan|negotiable|canh.*tranh|thuong.*luong|t\.t\b|\btt\b|upto|you.{0,5}ll\s*love|love\s*it)", raw):
                 self.salary_negotiable = True
-        
+
         return self
 
     @field_validator("job_level", mode="before")
     @classmethod
     def normalize_job_level(cls, v: Any, info: Any) -> Optional[str]:
-        # Read from 'job_expertise' (key from raw input) or nested fields
         val = v
         if not val:
             val = info.data.get("job_expertise")
@@ -351,23 +360,23 @@ class JobSchema(BaseModel):
     @field_validator("company_industry", mode="before")
     @classmethod
     def map_industry(cls, v: Any, info: Any) -> Optional[str]:
-        # Read from possible source keys
         return v or info.data.get("company_industry") or info.data.get("company_type")
+
 
 if __name__ == "__main__":
     # Load data from JSON file
     data_file = DATA_FILE
     output_file = OUTPUT_FILE
-    
+
     if not data_file.exists():
         print(f"Error: File not found: {data_file}")
         exit(1)
-    
+
     with open(data_file, "r", encoding="utf-8") as f:
         sample_jobs = json.load(f)
-    
+
     print(f"Loaded {len(sample_jobs)} jobs from {data_file.name}\n")
-    
+
     processed_jobs = []
     
     # Process all jobs
@@ -387,6 +396,6 @@ if __name__ == "__main__":
     # Save processed data to file
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(processed_jobs, f, indent=2, ensure_ascii=False, cls=DateTimeEncoder)
-    
+
     print(f"\n✓ Processed {len(processed_jobs)} jobs")
     print(f"✓ Output saved to: {output_file.name}")
