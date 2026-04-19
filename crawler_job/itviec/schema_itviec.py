@@ -134,7 +134,11 @@ class JobSchema(BaseModel):
 
     @staticmethod
     def _parse_salary_fields(data: dict) -> dict:
-        NEGOTIABLE_KEYWORDS = {"thoa thuan", "negotiable", "thoả thuận", "thỏa thuận", "agreement"}
+        NEGOTIABLE_KEYWORDS = {
+            "thoa thuan", "negotiable", "thoả thuận", "thỏa thuận",
+            "agreement", "canh tranh", "love it"
+        }
+        SYMBOL_TOKENS = {"$", "€", "£", "¥", "₫"}
         CURRENCY_MAP = {
             "usd": "USD", "$": "USD",
             "eur": "EUR", "€": "EUR",
@@ -149,7 +153,7 @@ class JobSchema(BaseModel):
         if not salary_raw:
             return data
 
-        salary_normalized = salary_raw.lower()
+        salary_normalized = denormalize_text(salary_raw)
 
         if any(kw in salary_normalized for kw in NEGOTIABLE_KEYWORDS):
             data["salary_negotiable"] = True
@@ -158,38 +162,46 @@ class JobSchema(BaseModel):
         try:
             cleaned = re.sub(r'(?<=\d)[\s.](?=\d{3})', '', salary_raw)
             numbers = re.findall(r'\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?', cleaned)
-            cleaned_nums = [float(n.replace(',', '')) for n in numbers]
 
-            if cleaned_nums:
-                data["salary_min"] = min(cleaned_nums)
-                data["salary_max"] = max(cleaned_nums)
+            if not numbers:
+                return data
 
-            matched_currency = None
+            tmp_nums = [float(n.replace(',', '')) for n in numbers]
+            s_min, s_max = min(tmp_nums), max(tmp_nums)
+
+            # Match currency — symbol dùng `in`, text token dùng word boundary
+            matched_cur = None
             for token, normalized in sorted(CURRENCY_MAP.items(), key=lambda x: -len(x[0])):
-                if token in salary_normalized:
-                    matched_currency = normalized
-                    break
-
-            if matched_currency:
-                if matched_currency == "VND_MILLION":
-                    data["salary_min"] = int(data["salary_min"] * 1_000_000) if data.get("salary_min") else None
-                    data["salary_max"] = int(data["salary_max"] * 1_000_000) if data.get("salary_max") else None
-                    data["salary_currency"] = "VND"
-                elif matched_currency == "VND_THOUSAND":
-                    data["salary_min"] = int(data["salary_min"] * 1_000) if data.get("salary_min") else None
-                    data["salary_max"] = int(data["salary_max"] * 1_000) if data.get("salary_max") else None
-                    data["salary_currency"] = "VND"
+                if token in SYMBOL_TOKENS:
+                    if token in salary_normalized:
+                        matched_cur = normalized
+                        break
                 else:
-                    data["salary_currency"] = matched_currency
-                    if data.get("salary_min") and data["salary_min"] == int(data["salary_min"]):
-                        data["salary_min"] = int(data["salary_min"])
-                    if data.get("salary_max") and data["salary_max"] == int(data["salary_max"]):
-                        data["salary_max"] = int(data["salary_max"])
+                    if re.search(rf'\b{re.escape(token)}\b', salary_normalized):
+                        matched_cur = normalized
+                        break
+
+            final_currency = "VND"
+            if matched_cur == "VND_MILLION":
+                s_min *= 1_000_000
+                s_max *= 1_000_000
+            elif matched_cur == "VND_THOUSAND":
+                s_min *= 1_000
+                s_max *= 1_000
+            elif matched_cur:
+                final_currency = matched_cur
             else:
-                data["salary_currency"] = None
+                final_currency = "UNKNOWN"
+
+            data["salary_min"] = int(s_min) if s_min == int(s_min) else s_min
+            data["salary_max"] = int(s_max) if s_max == int(s_max) else s_max
+            data["salary_currency"] = final_currency
 
         except Exception as e:
+            print(f"Warning: Failed to parse salary '{salary_raw}' — job_id={data.get('job_id', 'N/A')}: {e}")
             data["salary_parse_error"] = f"Parse failed: '{salary_raw}' — {e}"
+            data.pop("salary_min", None)
+            data.pop("salary_max", None)
 
         return data
 
