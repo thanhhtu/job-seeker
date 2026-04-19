@@ -1,0 +1,8 @@
+scrapy
+scrapy-playwright
+playwright
+playwright-stealth
+nest-asyncio
+ipykernel
+pydantic
+python-dotenv
