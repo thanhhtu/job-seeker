@@ -29,7 +29,7 @@ from bs4 import BeautifulSoup
 BASE_URL         = "https://www.topcv.vn/tim-viec-lam-cong-nghe-thong-tin-cr257"
 SITE_URL         = "https://www.topcv.vn"
 MAX_PAGES        = 1
-MAX_JOBS_PER_RUN = 2     # 0 = crawl all
+MAX_JOBS_PER_RUN = 0     # 0 = crawl all
 CRAWL_DETAIL     = True
 WAIT_MIN         = 1.5   # seconds, random delay between requests
 WAIT_MAX         = 3.5
