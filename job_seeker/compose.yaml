@@ -1,0 +1,17 @@
+services:
+    job_seeker_db:
+        container_name: job_seeker_db
+        build: postgres
+        image: postgres-pg_textsearch:latest
+        command: postgres -c shared_preload_libraries=pg_textsearch
+        environment:
+            - "POSTGRES_DB=postgres"
+            - "POSTGRES_PASSWORD=postgres"
+            - "POSTGRES_USER=postgres"
+        ports:
+            - "5433:5432"
+        volumes:
+            - "job_seeker_data:/var/lib/postgresql"
+
+volumes:
+    job_seeker_data:
