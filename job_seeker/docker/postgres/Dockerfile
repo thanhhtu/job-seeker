@@ -21,3 +21,4 @@ RUN apt-get update && apt-get install -y \
     && apt-get autoremove -y \
     && apt-get clean
     
+RUN echo "shared_preload_libraries = 'pg_textsearch'" >> /usr/share/postgresql/postgresql.conf.sample

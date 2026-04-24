@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+FlagEmbedding
+transformers
+# torch is installed separately in the Dockerfile according to the platform

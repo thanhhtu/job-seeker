@@ -1,10 +1,12 @@
+<!-- 
 uv init
 uv sync
 uv add [library]
 uv run python main.py
 docker exec -it job_seeker_db psql -U postgres -d postgres   
 docker compose down -v
-docker compose build --no-cache    
+docker compose build --no-cache     
+-->
 
 # Project Name
 
@@ -18,11 +20,11 @@ Job search agent hỗ trợ tìm kiếm và hỏi đáp về job, sử dụng La
 job_seeker/
 ├── src/
 │   ├── main.py
-│   ├── agent/           # Module chứa LangGraph state machine — agent tìm kiếm và hỏi đáp về job cho user.
+│   ├── agent/             # Module chứa LangGraph state machine — agent tìm kiếm và hỏi đáp về job cho user.
 │   │   ├── graph.py       # Định nghĩa LangGraph graph: kết nối các node, điều kiện chuyển trạng thái. Entry point của agent.
 │   │   ├── nodes.py       # Implement từng node trong graph: nhận câu hỏi từ user, gọi search, rerank, sinh câu trả lời.
 │   │   └── state.py       # Định nghĩa AgentState — schema trạng thái (messages, context, kết quả search,...) truyền xuyên suốt các node.
-│   ├── retrieval/       # Module xử lý tìm kiếm và rerank kết quả — tách biệt hoàn toàn với DB layer.
+│   ├── retrieval/         # Module xử lý tìm kiếm và rerank kết quả — tách biệt hoàn toàn với DB layer.
 │   │   ├── reranker.py    # Rerank kết quả search bằng cross-encoder hoặc LLM trước khi trả về cho agent.
 │   │   └── search.py      # Thực hiện hybrid search (BM25 + vector) trong PostgreSQL. Kết hợp kết quả bằng Reciprocal Rank Fusion (RRF).
 │   ├── core/
@@ -33,7 +35,7 @@ job_seeker/
 │   │   ├── repository.py  # Query functions tìm kiếm job. Không dùng ORM, viết SQL trực tiếp với asyncpg.
 │   │   └── migrations/    # SQL migration files để khởi tạo và cập nhật schema DB theo từng version.
 │   ├── ingest/
-│   │   ├── embed.py       # Tạo vector embedding từ text dùng Mistral AI (mistral-embed). Quản lý singleton embedder, chạy bất đồng bộ.
+│   │   ├── embed.py       # Tạo vector embedding từ text dùng bge-m3. Quản lý singleton embedder, chạy bất đồng bộ.
 │   │   ├── json_loader.py # Load và parse raw data từ file JSON trước khi đưa vào pipeline.
 │   │   └── pipeline.py    # Orchestrate toàn bộ flow ingest: load -> embed -> lưu DB.
 │   └── models/
@@ -72,7 +74,7 @@ crawler/itviec, crawler/topcv, crawler/data_job
       ↓
 json_loader.py (load + parse raw data)
       ↓
-embed.py (text → vector qua Mistral AI)
+embed.py (text → vector qua bge-m3)
       ↓
 clients.py (lưu vào PostgreSQL)
 ```
@@ -121,22 +123,26 @@ cp .env.example .env
 ```
 
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/postgres
+DATABASE_URL=
+DATABASE_DB=
+DATABASE_PASSWORD=
+DATABASE_USER=
 MISTRAL_API_KEY=your_mistral_api_key_here   # REQUIRED
 LANGSMITH_API_KEY=                          # Optional, for tracing
+TARGETARCH=                                 # Mac: arm64 | Win: amd64
 ```
 
 ---
 
 ## 5. Cài đặt và chạy
 
-### Yêu cầu
+### 5.1. Yêu cầu
 
 - Python 3.11+ (xem `.python-version`)
 - [uv](https://github.com/astral-sh/uv)
 - Docker
 
-### Setup
+### 5.2. Setup
 
 ```bash
 # 1. Cài dependencies
@@ -146,7 +152,7 @@ uv sync
 cp .env.example .env
 
 # 3. Chạy PostgreSQL
-docker compose up -d
+docker compose up
 
 # 4. Chạy migrations
 # Using psql

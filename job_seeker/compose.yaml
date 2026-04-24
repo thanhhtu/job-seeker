@@ -1,17 +1,68 @@
 services:
     job_seeker_db:
         container_name: job_seeker_db
-        build: postgres
+        build: ./docker/postgres
         image: postgres-pg_textsearch:latest
         command: postgres -c shared_preload_libraries=pg_textsearch
         environment:
-            - "POSTGRES_DB=postgres"
-            - "POSTGRES_PASSWORD=postgres"
-            - "POSTGRES_USER=postgres"
+            - POSTGRES_DB=${DATABASE_DB}
+            - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+            - POSTGRES_USER=${DATABASE_USER}
         ports:
             - "5433:5432"
         volumes:
-            - "job_seeker_data:/var/lib/postgresql"
+            - job_seeker_data:/var/lib/postgresql/data
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - job_seeker_network
+
+    embedding:
+        container_name: embedding_ollama
+        build: ./docker/embedding
+        ports:
+            - "11434:11434"
+        volumes:
+            - embedding_data:/root/.embedding_cache
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+        networks:
+            - job_seeker_network
+
+    reranker:
+        container_name: bge-reranker
+        build:
+            context: ./docker/reranker
+            args:
+                - TARGETARCH=${TARGETARCH:-amd64}  # mặc định amd64 khi deploy server
+        ports:
+            - "8000:8000"
+        volumes:
+            - reranker_model_cache:/root/.cache/huggingface
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+        networks:
+            - job_seeker_network
 
 volumes:
     job_seeker_data:
+    embedding_data:
+    reranker_model_cache:
+
+networks:
+    job_seeker_network:
+        driver: bridge

@@ -5,9 +5,10 @@ from uuid import UUID
 
 import asyncpg
 
-
 @dataclass
 class Job:
+    id: UUID | None = None
+
     job_id: str = ""
     source: str = ""
     url: str = ""
@@ -42,46 +43,57 @@ class Job:
     overtime_policy: str | None = None
     hiring_quantity: int | None = None
     deadline: date | None = None
+
     posted_date: datetime | None = None
     crawled_date: datetime | None = None
 
     created_at: datetime = field(default_factory=lambda: datetime.now())
     updated_at: datetime = field(default_factory=lambda: datetime.now())
-    id: UUID | None = None
     embedding: list[float] | None = field(default=None, repr=False)
 
     @classmethod
     def from_record(cls, record: asyncpg.Record) -> "Job":
         return cls(
             id=record["id"],
+
             job_id=record["job_id"],
             source=record["source"],
             url=record["url"],
             title=record["title"],
-            skills=record["skills"] or [],
-            job_domains=record["job_domains"] or [],
-            description=record["description"],
-            requirements=record["requirements"],
-            work_mode=record["work_mode"],
+
+            company_name=record["company_name"],
+            company_url=record["company_url"],
+            company_id=record["company_id"],
+            company_size=record["company_size"],
+            company_industry=record["company_industry"],
             country=record["country"],
-            job_level=record["job_level"],
-            education=record["education"],
+
+            salary_raw=record["salary_raw"],
             salary_min=float(record["salary_min"]) if record["salary_min"] else None,
             salary_max=float(record["salary_max"]) if record["salary_max"] else None,
             salary_currency=record["salary_currency"],
-            experience_years_min=record["experience_years_min"],
-            deadline=record["deadline"],
-            posted_date=record["posted_date"],
-            locations=record["locations"] or [],
+            salary_negotiable=record["salary_negotiable"],
+
             location_raw=record["location_raw"],
-            company_name=record["company_name"],
-            company_size=record["company_size"],
-            company_industry=record["company_industry"],
+            locations=record["locations"] or [],
+
+            job_domains=record["job_domains"] or [],
+            job_level=record["job_level"],
+            description=record["description"],
+            requirements=record["requirements"],
+            skills=record["skills"] or [],
+            experience_years_min=record["experience_years_min"],
+            education=record["education"],
+            benefits=record["benefits"],
+            work_mode=record["work_mode"],
             work_mode_days=record["work_mode_days"],
             overtime_policy=record["overtime_policy"],
-            benefits=record["benefits"],
             hiring_quantity=record["hiring_quantity"],
-            salary_negotiable=record["salary_negotiable"],
+            deadline=record["deadline"],
+
+            posted_date=record["posted_date"],
+            crawled_date=record["crawled_date"],
+
             created_at=record["created_at"],
             updated_at=record["updated_at"],
         )
