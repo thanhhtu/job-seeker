@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str
+    ollama_base_url: str
     mistral_api_key: str
 
 settings = Settings()

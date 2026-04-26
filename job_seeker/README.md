@@ -5,7 +5,9 @@ uv add [library]
 uv run python main.py
 docker exec -it job_seeker_db psql -U postgres -d postgres   
 docker compose down -v
-docker compose build --no-cache     
+docker compose build --no-cache
+docker compose ps 
+docker logs embedding_ollama 
 -->
 
 # Project Name
@@ -127,6 +129,7 @@ DATABASE_URL=
 DATABASE_DB=
 DATABASE_PASSWORD=
 DATABASE_USER=
+OLLAMA_BASE_URL=
 MISTRAL_API_KEY=your_mistral_api_key_here   # REQUIRED
 LANGSMITH_API_KEY=                          # Optional, for tracing
 TARGETARCH=                                 # Mac: arm64 | Win: amd64

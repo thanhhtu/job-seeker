@@ -1,8 +1,6 @@
 import asyncio
 import threading
-from os import getenv
-
-from langchain_mistralai import MistralAIEmbeddings
+import httpx
 
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -10,48 +8,42 @@ from src.models.job_schema import Job
 
 logger = get_logger(__name__)
 
-MISTRAL_MODEL = "mistral-embed"
-EMBED_BATCH_SIZE = 64  # Mistral cho phép tối đa 2048 tokens/text, batch hợp lý
+BGE_MODEL = "bge-m3"
+EMBED_BATCH_SIZE = 32
+OLLAMA_BASE_URL = settings.ollama_base_url  # ví dụ: "http://ollama:11434"
 
-_embedder_instance: MistralAIEmbeddings | None = None
-_embedder_initializing = False
-_embedder_lock = threading.Lock()
+_client_instance: httpx.AsyncClient | None = None
+_client_lock = threading.Lock()
 
 
-def _create_embedder_sync(api_key: str) -> MistralAIEmbeddings:
-    return MistralAIEmbeddings(
-        mistral_api_key=api_key,
-        model=MISTRAL_MODEL,
+def get_http_client() -> httpx.AsyncClient:
+    global _client_instance
+    if _client_instance is None:
+        with _client_lock:
+            if _client_instance is None:
+                _client_instance = httpx.AsyncClient(
+                    base_url=OLLAMA_BASE_URL,
+                    timeout=60.0,  # bge-m3 có thể chậm hơn
+                )
+    return _client_instance
+
+
+async def _embed_texts(texts: list[str] | str) -> list[list[float]]:
+    client = get_http_client()
+    response = await client.post(
+        "/api/embed",
+        json={
+            "model": BGE_MODEL,
+            "input": texts if isinstance(texts, list) else [texts],
+        }
     )
+    response.raise_for_status()
+    return response.json()["embeddings"]
 
 
-async def get_embedder_async() -> MistralAIEmbeddings:
-    global _embedder_instance, _embedder_initializing
-
-    if _embedder_instance is not None:
-        return _embedder_instance
-
-    if _embedder_initializing:
-        while _embedder_initializing:
-            await asyncio.sleep(0.1)
-        return _embedder_instance
-
-    with _embedder_lock:
-        if _embedder_instance is None:
-            api_key = settings.mistral_api_key  # dùng settings thay vì getenv
-            _embedder_initializing = True
-
-    loop = asyncio.get_event_loop()
-    embedder = await loop.run_in_executor(None, _create_embedder_sync, api_key)
-
-    _embedder_instance = embedder
-    _embedder_initializing = False
-    return embedder
-
-
-async def embed_query_async(embedder: MistralAIEmbeddings, query: str) -> list[float]:
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, embedder.embed_query, query)
+async def embed_query_async(query: str) -> list[float]:
+    embeddings = await _embed_texts(query)
+    return embeddings[0]
 
 
 def _build_embed_text(job: Job) -> str:
@@ -75,28 +67,31 @@ async def embed_jobs(jobs: list[dict]) -> list[Job]:
     Nhận list[dict] raw từ JSON loader,
     parse thành Job objects, embed, trả về list[Job] với embedding đã set.
     """
-    embedder = await get_embedder_async()
-    loop = asyncio.get_event_loop()
-
     # Parse dict -> Job
     job_objects: list[Job] = [Job.from_json(j) for j in jobs]
 
     # Build texts to embed
     texts = [_build_embed_text(job) for job in job_objects]
 
-    # Batch embed (chạy trong thread để không block event loop)
+    # Batch embed
     all_embeddings: list[list[float]] = []
     for i in range(0, len(texts), EMBED_BATCH_SIZE):
         batch = texts[i : i + EMBED_BATCH_SIZE]
         logger.info(f"Embedding batch {i // EMBED_BATCH_SIZE + 1} ({len(batch)} jobs)...")
-        embeddings = await loop.run_in_executor(
-            None, embedder.embed_documents, batch
-        )
+        embeddings = await _embed_texts(batch)
         all_embeddings.extend(embeddings)
 
     # Gán embedding vào từng Job
     for job, emb in zip(job_objects, all_embeddings):
         job.embedding = emb
 
-    logger.info(f"Embedded {len(job_objects)} jobs")
+    logger.info(f"Embedded {len(job_objects)} jobs successfully")
     return job_objects
+
+
+async def close_client():
+    """Gọi khi shutdown app để đóng httpx client."""
+    global _client_instance
+    if _client_instance:
+        await _client_instance.aclose()
+        _client_instance = None
