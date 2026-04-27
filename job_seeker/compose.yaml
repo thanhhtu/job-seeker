@@ -1,6 +1,6 @@
 services:
-    job_seeker_db:
-        container_name: job_seeker_db
+    job-seeker-db:
+        container_name: job-seeker-db
         build: ./docker/postgres
         image: postgres-pg_textsearch:latest
         command: postgres -c shared_preload_libraries=pg_textsearch
@@ -11,7 +11,7 @@ services:
         ports:
             - "5433:5432"
         volumes:
-            - job_seeker_data:/var/lib/postgresql/data
+            - job-seeker-data:/var/lib/postgresql/data 
         restart: unless-stopped
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -19,15 +19,15 @@ services:
             timeout: 5s
             retries: 5
         networks:
-            - job_seeker_network
+            - job-seeker-network
 
-    embedding:
-        container_name: embedding_ollama
+    embedding-ollama:
+        container_name: embedding-ollama
         build: ./docker/embedding
         ports:
             - "11434:11434"
         volumes:
-            - embedding_data:/root/.embedding_cache
+            - embedding-data:/root/.embedding_cache
         restart: unless-stopped
         healthcheck:
             test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
@@ -36,18 +36,18 @@ services:
             retries: 3
             start_period: 60s
         networks:
-            - job_seeker_network
+            - job-seeker-network
 
-    reranker:
+    bge-reranker:
         container_name: bge-reranker
         build:
             context: ./docker/reranker
             args:
-                - TARGETARCH=${TARGETARCH:-amd64}  # mặc định amd64 khi deploy server
+                - TARGETARCH=${TARGETARCH:-amd64}
         ports:
             - "8000:8000"
         volumes:
-            - reranker_model_cache:/root/.cache/huggingface
+            - reranker-model-cache:/root/.cache/huggingface
         restart: unless-stopped
         healthcheck:
             test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
@@ -56,13 +56,13 @@ services:
             retries: 3
             start_period: 60s
         networks:
-            - job_seeker_network
+            - job-seeker-network
 
 volumes:
-    job_seeker_data:
-    embedding_data:
-    reranker_model_cache:
+    job-seeker-data:
+    embedding-data:
+    reranker-model-cache:
 
 networks:
-    job_seeker_network:
+    job-seeker-network:
         driver: bridge

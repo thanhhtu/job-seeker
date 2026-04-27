@@ -19,6 +19,8 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
         pip install --no-cache-dir torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu; \
     fi
 
+RUN pip install --no-cache-dir "transformers==4.40.2" "FlagEmbedding==1.2.11"
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .

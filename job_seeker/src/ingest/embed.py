@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 BGE_MODEL = "bge-m3"
 EMBED_BATCH_SIZE = 32
-OLLAMA_BASE_URL = settings.ollama_base_url  # ví dụ: "http://ollama:11434"
+OLLAMA_BASE_URL = settings.ollama_base_url
 
 _client_instance: httpx.AsyncClient | None = None
 _client_lock = threading.Lock()
@@ -23,7 +23,7 @@ def get_http_client() -> httpx.AsyncClient:
             if _client_instance is None:
                 _client_instance = httpx.AsyncClient(
                     base_url=OLLAMA_BASE_URL,
-                    timeout=60.0,  # bge-m3 có thể chậm hơn
+                    timeout=60.0,
                 )
     return _client_instance
 
@@ -48,12 +48,12 @@ async def embed_query_async(query: str) -> list[float]:
 
 def _build_embed_text(job: Job) -> str:
     """
-    Ghép các field quan trọng thành 1 chuỗi để embed.
-    Title + skills + job_domains có trọng số cao hơn nên lặp lại.
+    Combine important fields into a single string for embedding.
+    Title + skills + job_domains are repeated to increase their weight.
     """
     parts = [
         job.title,
-        job.title,  # nhân đôi để tăng weight
+        job.title,  # double to increase weight
         " ".join(job.skills),
         " ".join(job.job_domains),
         job.description[:1000] if job.description else "",
@@ -64,8 +64,8 @@ def _build_embed_text(job: Job) -> str:
 
 async def embed_jobs(jobs: list[dict]) -> list[Job]:
     """
-    Nhận list[dict] raw từ JSON loader,
-    parse thành Job objects, embed, trả về list[Job] với embedding đã set.
+    Receive a list[dict] raw from JSON loader,
+    parse into Job objects, embed, and return list[Job] with embeddings set.
     """
     # Parse dict -> Job
     job_objects: list[Job] = [Job.from_json(j) for j in jobs]
@@ -81,7 +81,7 @@ async def embed_jobs(jobs: list[dict]) -> list[Job]:
         embeddings = await _embed_texts(batch)
         all_embeddings.extend(embeddings)
 
-    # Gán embedding vào từng Job
+    # Assign embedding to each Job
     for job, emb in zip(job_objects, all_embeddings):
         job.embedding = emb
 
@@ -90,7 +90,7 @@ async def embed_jobs(jobs: list[dict]) -> list[Job]:
 
 
 async def close_client():
-    """Gọi khi shutdown app để đóng httpx client."""
+    """Call on app shutdown to close the httpx client."""
     global _client_instance
     if _client_instance:
         await _client_instance.aclose()

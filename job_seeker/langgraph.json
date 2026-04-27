@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+        "job_seeker": "./src/agent/graph.py:build_graph"
+    },
+    "env": ".env"
+}

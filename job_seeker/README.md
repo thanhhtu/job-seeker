@@ -12,7 +12,7 @@ docker logs embedding_ollama
 
 # Project Name
 
-Job search agent hỗ trợ tìm kiếm và hỏi đáp về job, sử dụng LangGraph, Mistral AI embeddings, và PostgreSQL hybrid search (BM25 + vector).
+Job search agent hỗ trợ tìm kiếm và hỏi đáp về job, sử dụng LangGraph, Mistral AI (LLM), Ollama (bge-m3 embeddings), và PostgreSQL hybrid search (BM25 + vector).
 
 ---
 
@@ -24,7 +24,7 @@ job_seeker/
 │   ├── main.py
 │   ├── agent/             # Module chứa LangGraph state machine — agent tìm kiếm và hỏi đáp về job cho user.
 │   │   ├── graph.py       # Định nghĩa LangGraph graph: kết nối các node, điều kiện chuyển trạng thái. Entry point của agent.
-│   │   ├── nodes.py       # Implement từng node trong graph: nhận câu hỏi từ user, gọi search, rerank, sinh câu trả lời.
+│   │   ├── nodes/         # Implement logic cho từng node trong graph (input, rewrite, search, rrf, rerank, output).
 │   │   └── state.py       # Định nghĩa AgentState — schema trạng thái (messages, context, kết quả search,...) truyền xuyên suốt các node.
 │   ├── retrieval/         # Module xử lý tìm kiếm và rerank kết quả — tách biệt hoàn toàn với DB layer.
 │   │   ├── reranker.py    # Rerank kết quả search bằng cross-encoder hoặc LLM trước khi trả về cho agent.
@@ -92,7 +92,7 @@ User hỏi / tìm kiếm
       ↓
 graph.py (LangGraph điều phối)
       ↓
-nodes.py (embed câu hỏi → gọi search → rerank → sinh trả lời)
+nodes/ (nhận input → rewrite query → gọi search → rrf → rerank → generate (LLM) → output)
       ↓
 retrieval/search.py (hybrid search PostgreSQL)
       ↓
@@ -129,10 +129,13 @@ DATABASE_URL=
 DATABASE_DB=
 DATABASE_PASSWORD=
 DATABASE_USER=
-OLLAMA_BASE_URL=
-MISTRAL_API_KEY=your_mistral_api_key_here   # REQUIRED
-LANGSMITH_API_KEY=                          # Optional, for tracing
-TARGETARCH=                                 # Mac: arm64 | Win: amd64
+MISTRAL_API_KEY=your_mistral_api_key_here
+OLLAMA_BASE_URL=http://localhost:11434       # Ollama embedding service
+RERANKER_URL=http://localhost:8000           # BGE Reranker Docker service
+LANGSMITH_API_KEY=                           # Optional, for LangSmith tracing
+LANGSMITH_TRACING=false                      # Set true to enable tracing
+LANGSMITH_PROJECT=job-seeker
+TARGETARCH=                                  # Mac: arm64 | Win: amd64
 ```
 
 ---
@@ -141,7 +144,7 @@ TARGETARCH=                                 # Mac: arm64 | Win: amd64
 
 ### 5.1. Yêu cầu
 
-- Python 3.11+ (xem `.python-version`)
+- Python 3.12+ (xem `.python-version`)
 - [uv](https://github.com/astral-sh/uv)
 - Docker
 
@@ -162,14 +165,24 @@ docker compose up
 psql "postgresql://postgres:postgres@localhost:5433/postgres" -f src/db/migrations/001_initial_schema.sql
 
 # Or using Docker
-docker exec -i job_seeker_db psql -U postgres -d postgres < src/db/migrations/001_initial_schema.sql
+docker exec -i job-seeker-db psql -U postgres -d postgres < src/db/migrations/001_initial_schema.sql
 
 # 5. Chạy ingest data
 uv run scripts/ingest.py
 
 # 6. Start LangGraph server
-langgraph dev
+uv run langgraph dev
 ```
+
+Opens LangGraph Studio at `http://localhost:2024`.
+
+For external access (webhooks, mobile testing, etc.), use `--tunnel`:
+
+```bash
+langgraph dev --tunnel
+```
+
+This exposes the server via a public URL through a tunnel.
 
 ---
 
@@ -180,7 +193,8 @@ langgraph dev
 | `langgraph`                       | State machine agent — tìm kiếm và hỏi đáp về job   |
 | `asyncpg`                         | Kết nối PostgreSQL bất đồng bộ, không dùng ORM     |
 | `pgvector`                        | Vector search trong PostgreSQL                     |
-| `langchain-mistralai`             | Tạo embedding qua Mistral AI                       |
+| `langchain-mistralai`             | LLM (ChatMistralAI) cho agent sinh câu trả lời     |
+| `httpx`                           | Tích hợp API Ollama để tạo vector embedding        |
 | `pydantic` / `pydantic-settings`  | Data modeling và config management                 |
 | `ruff`                            | Linter + formatter                                 |
 | `uv`                              | Package manager                                    |

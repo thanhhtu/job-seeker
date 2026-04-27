@@ -6,12 +6,6 @@ logger = get_logger(__name__)
 
 
 def load_jobs_from_file(path: str | Path) -> list[dict]:
-    """
-    Load raw job data từ một JSON file.
-    Hỗ trợ 2 format:
-      - list: [ {...}, {...} ]
-      - dict có key 'jobs': { "jobs": [...] }
-    """
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
@@ -31,7 +25,6 @@ def load_jobs_from_file(path: str | Path) -> list[dict]:
 
 
 def load_jobs_from_dir(directory: str | Path) -> list[dict]:
-    """Load tất cả .json files trong một folder."""
     directory = Path(directory)
     all_jobs = []
 
