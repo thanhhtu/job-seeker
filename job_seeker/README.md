@@ -198,3 +198,44 @@ This exposes the server via a public URL through a tunnel.
 | `pydantic` / `pydantic-settings`  | Data modeling và config management                 |
 | `ruff`                            | Linter + formatter                                 |
 | `uv`                              | Package manager                                    |
+
+---
+
+## 6. Web chatbot (Chainlit FE + FastAPI BE + LangGraph)
+
+Project chạy theo kiến trúc đầy đủ:
+
+- **LangGraph (Brain):** `src/agent/graph.py`
+- **Backend API (FastAPI):** `src/api/app.py`
+- **Database chat history (SQLite):** `data/chat_history.db` qua `src/chat_history/store.py`
+- **Frontend web chat (Chainlit):** `src/chainlit_app.py` (gọi backend API)
+
+### 6.1. Chạy backend API
+
+```bash
+uv sync
+uv run uvicorn src.api.app:app --reload --port 8080
+```
+
+### 6.2. Chạy Chainlit frontend
+
+```bash
+uv run chainlit run src/chainlit_app.py -w --port 8888
+```
+
+Mở chatbot tại URL mà Chainlit in ra (thường là `http://localhost:8000`).
+
+### 6.3. API chính
+
+- `POST /api/chat`
+  - Body:
+    ```json
+    {
+      "message": "python developer remote hanoi",
+      "user_id": "user_001",
+      "session_id": null
+    }
+    ```
+  - `session_id` có thể bỏ trống ở tin đầu, backend tự tạo session mới.
+- `GET /api/sessions/{session_id}/messages`
+  - Lấy lại toàn bộ lịch sử hội thoại của session.

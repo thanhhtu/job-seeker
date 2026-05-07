@@ -10,11 +10,18 @@ from src.models.job_schema import Job
 
 logger = get_logger(__name__)
 
-_llm = ChatMistralAI(
-    model="mistral-large-latest",
-    api_key=settings.mistral_api_key,
-    temperature=0.2,
-)
+_llm: ChatMistralAI | None = None
+
+
+def _get_llm() -> ChatMistralAI:
+    global _llm
+    if _llm is None:
+        _llm = ChatMistralAI(
+            model="mistral-large-latest",
+            api_key=settings.mistral_api_key,
+            temperature=0.2,
+        )
+    return _llm
 
 
 def _job_context(rank: int, job: Job) -> str:
@@ -80,7 +87,7 @@ async def generate_node(state: JobSearchState) -> dict:
         ),
     ]
 
-    response = await _llm.ainvoke(messages)
+    response = await _get_llm().ainvoke(messages)
     generated_answer = str(response.content).strip()
 
     logger.info("Generate node produced LLM answer")

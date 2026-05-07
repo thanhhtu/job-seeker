@@ -1,4 +1,8 @@
+# src/agent/nodes/reranker_node.py
 from __future__ import annotations
+
+import asyncio
+import inspect
 
 from src.agent.state import JobSearchState
 from src.core.logger import get_logger
@@ -7,7 +11,7 @@ from src.retrieval.reranker import rerank
 
 logger = get_logger(__name__)
 
-TOP_K = 10  # Number of top results to keep after reranking
+TOP_K = 10
 
 
 def _job_to_text(job: Job) -> str:
@@ -22,30 +26,24 @@ def _job_to_text(job: Job) -> str:
 
 
 async def reranker_node(state: JobSearchState) -> dict:
-    rrf_results: list[Job] = state.get("rrf_results", [])
-    raw_query: str = state.get("raw_query", "")
+    rrf_results: list[Job] = state.get("rrf_results") or []
+    raw_query: str = (state.get("raw_query") or "").strip()
 
     if not rrf_results:
         logger.warning("reranker_node: no RRF results to rerank")
         return {"reranked_results": []}
 
     documents = [_job_to_text(job) for job in rrf_results]
+    logger.info("Reranking %d docs (query=%r)", len(documents), raw_query)
 
-    logger.info(
-        f"Sending {len(documents)} documents to BGE Reranker "
-        f"(query={raw_query!r})"
-    )
+    # Tự động xử lý cả async lẫn sync rerank()
+    if inspect.iscoroutinefunction(rerank):
+        scores = await rerank(query=raw_query, documents=documents)
+    else:
+        scores = await asyncio.to_thread(rerank, query=raw_query, documents=documents)
 
-    scores = await rerank(query=raw_query, documents=documents)
-
-    # Zip scores with jobs, sort by score, and take top K
-    scored = sorted(
-        zip(scores, rrf_results),
-        key=lambda x: x[0],
-        reverse=True,
-    )
-
+    scored = sorted(zip(scores, rrf_results), key=lambda x: x[0], reverse=True)
     reranked_results = [job for _, job in scored[:TOP_K]]
 
-    logger.info(f"Reranker selected top {len(reranked_results)} jobs")
+    logger.info("Reranker selected top %d jobs", len(reranked_results))
     return {"reranked_results": reranked_results}

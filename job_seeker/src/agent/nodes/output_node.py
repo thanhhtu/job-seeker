@@ -1,4 +1,7 @@
+# src/agent/nodes/output_node.py
 from __future__ import annotations
+
+from langchain_core.messages import AIMessage
 
 from src.agent.state import JobSearchState
 from src.core.logger import get_logger
@@ -9,10 +12,9 @@ logger = get_logger(__name__)
 
 def _format_job(rank: int, job: Job) -> str:
     lines: list[str] = []
-
     lines.append(f"{'─' * 60}")
     lines.append(f"#{rank}  {job.title}")
-    lines.append(f"{job.company_name}")
+    lines.append(f"    {job.company_name}")
 
     if job.locations:
         lines.append(f"    {', '.join(job.locations)}")
@@ -25,7 +27,6 @@ def _format_job(rank: int, job: Job) -> str:
     elif job.salary_negotiable:
         lines.append("    Negotiable")
 
-    # Work mode & level
     meta_parts: list[str] = []
     if job.work_mode and job.work_mode != "unknown":
         meta_parts.append(job.work_mode.capitalize())
@@ -36,14 +37,12 @@ def _format_job(rank: int, job: Job) -> str:
     if meta_parts:
         lines.append(f"    {' · '.join(meta_parts)}")
 
-    # Skills (max 8)
     if job.skills:
         skill_str = ", ".join(job.skills[:8])
         if len(job.skills) > 8:
             skill_str += f" +{len(job.skills) - 8} more"
         lines.append(f"    {skill_str}")
 
-    # Link
     if job.url:
         lines.append(f"    {job.url}")
 
@@ -51,34 +50,43 @@ def _format_job(rank: int, job: Job) -> str:
 
 
 def output_node(state: JobSearchState) -> dict:
-    reranked_results: list[Job] = state.get("reranked_results", [])
-    generated_answer: str = state.get("generated_answer", "").strip()
+    """Tổng hợp output cuối và append AIMessage vào messages.
 
-    if not reranked_results:
-        output = (
+    KHÔNG dùng existing_output từ state vì checkpointer có thể giữ
+    output cũ từ lượt trước, gây trả về kết quả sai.
+    """
+    reranked_results: list[Job] = state.get("reranked_results") or []
+    generated_answer: str = (state.get("generated_answer") or "").strip()
+    needs_input_prompt: str = (state.get("needs_input_prompt") or "").strip()
+
+    if needs_input_prompt:
+        final_output = needs_input_prompt
+    elif not reranked_results:
+        final_output = (
             "No jobs found matching your criteria.\n"
             "Try adjusting your keywords or relaxing the filters."
         )
         if generated_answer:
-            output = f"{generated_answer}\n\n{output}"
-        return {"output": output}
+            final_output = f"{generated_answer}\n\n{final_output}"
+    else:
+        header = (
+            f"Found {len(reranked_results)} most relevant jobs:\n"
+            f"(Results ranked by BGE Reranker v2-m3)\n"
+        )
+        job_blocks = "\n\n".join(
+            _format_job(rank, job)
+            for rank, job in enumerate(reranked_results, start=1)
+        )
+        sections: list[str] = []
+        if generated_answer:
+            sections.append("LLM recommendation:\n" + generated_answer)
+        sections.append(header + "\n" + job_blocks + "\n" + "─" * 60)
+        final_output = "\n\n".join(sections)
 
-    header = (
-        f"Found {len(reranked_results)} most relevant jobs:\n"
-        f"(Results ranked by BGE Reranker v2-m3)\n"
-    )
+    logger.info("Output node: formatted %d jobs", len(reranked_results))
 
-    job_blocks = "\n\n".join(
-        _format_job(rank, job)
-        for rank, job in enumerate(reranked_results, start=1)
-    )
-
-    sections: list[str] = []
-    if generated_answer:
-        sections.append("LLM recommendation:\n" + generated_answer)
-
-    sections.append(header + "\n" + job_blocks + "\n" + "─" * 60)
-    output = "\n\n".join(sections)
-
-    logger.info(f"Output node: formatted {len(reranked_results)} jobs")
-    return {"output": output}
+    return {
+        "output": final_output,
+        # Tích lũy vào messages để lượt hội thoại sau có context
+        "messages": [AIMessage(content=final_output)],
+    }
