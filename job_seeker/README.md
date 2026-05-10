@@ -1,241 +1,310 @@
-<!-- 
-uv init
-uv sync
-uv add [library]
-uv run python main.py
-docker exec -it job_seeker_db psql -U postgres -d postgres   
-docker compose down -v
-docker compose build --no-cache
-docker compose ps 
-docker logs embedding_ollama 
--->
+# Job Seeker Agent
 
-# Project Name
-
-Job search agent hỗ trợ tìm kiếm và hỏi đáp về job, sử dụng LangGraph, Mistral AI (LLM), Ollama (bge-m3 embeddings), và PostgreSQL hybrid search (BM25 + vector).
+An agent for job search and Q&A, built with **LangGraph**, **Mistral AI**, **Ollama** (bge-m3 embeddings), and **PostgreSQL hybrid search** (BM25 + vector).
 
 ---
 
-## 1. Cấu trúc project
+## Table of Contents
 
-```
+- [Project Structure](#project-structure)
+- [Workflow](#workflow)
+- [Hybrid Search](#hybrid-search)
+- [Setup & Run](#setup--run)
+- [Web Chatbot](#web-chatbot)
+- [Docker](#docker)
+- [Database Migration](#database-migration)
+- [Tech Stack](#tech-stack)
+
+---
+
+## Project Structure
+
+```text
 job_seeker/
 ├── src/
-│   ├── main.py
-│   ├── agent/             # Module chứa LangGraph state machine — agent tìm kiếm và hỏi đáp về job cho user.
-│   │   ├── graph.py       # Định nghĩa LangGraph graph: kết nối các node, điều kiện chuyển trạng thái. Entry point của agent.
-│   │   ├── nodes/         # Implement logic cho từng node trong graph (input, rewrite, search, rrf, rerank, output).
-│   │   └── state.py       # Định nghĩa AgentState — schema trạng thái (messages, context, kết quả search,...) truyền xuyên suốt các node.
-│   ├── retrieval/         # Module xử lý tìm kiếm và rerank kết quả — tách biệt hoàn toàn với DB layer.
-│   │   ├── reranker.py    # Rerank kết quả search bằng cross-encoder hoặc LLM trước khi trả về cho agent.
-│   │   └── search.py      # Thực hiện hybrid search (BM25 + vector) trong PostgreSQL. Kết hợp kết quả bằng Reciprocal Rank Fusion (RRF).
+│   ├── agent/               # LangGraph state machine
+│   │   ├── graph.py         # Graph definition and routing
+│   │   ├── nodes/           
+│   │   └── state.py         # AgentState schema
+│   ├── api/                 # FastAPI backend
+│   │   ├── app.py
+│   │   └── schemas.py
+│   ├── chat_history/         # Chat history store (PostgreSQL)
+│   │   └── store.py
 │   ├── core/
-│   │   ├── config.py      # Load và validate environment variables (DATABASE_URL, MISTRAL_API_KEY,...). Dùng pydantic-settings.
-│   │   └── logger.py      # Cấu hình logger dùng chung cho toàn bộ app.
+│   │   ├── config.py         # Environment config (pydantic-settings)
+│   │   ├── logger.py         # Shared logger
+│   │   └── tracing.py        # LangSmith tracing helper
 │   ├── db/
-│   │   ├── client.py      # Khởi tạo và quản lý asyncpg connection pool. Cung cấp interface kết nối tới PostgreSQL.
-│   │   ├── repository.py  # Query functions tìm kiếm job. Không dùng ORM, viết SQL trực tiếp với asyncpg.
-│   │   └── migrations/    # SQL migration files để khởi tạo và cập nhật schema DB theo từng version.
+│   │   ├── client.py         # Initialize and manage the asyncpg connection pool. Provides PostgreSQL connection interfaces.
+│   │   ├── repository.py     # Job search query functions
+│   ├── frontend/             # Placeholder for web UI assets
+│   │   └── chainlit_app.py   # Chainlit frontend entry
 │   ├── ingest/
-│   │   ├── embed.py       # Tạo vector embedding từ text dùng bge-m3. Quản lý singleton embedder, chạy bất đồng bộ.
-│   │   ├── json_loader.py # Load và parse raw data từ file JSON trước khi đưa vào pipeline.
-│   │   └── pipeline.py    # Orchestrate toàn bộ flow ingest: load -> embed -> lưu DB.
-│   └── models/
-│       └── job_schema.py  # Định nghĩa schema/model chuẩn cho dữ liệu job dùng xuyên suốt pipeline và DB layer.
-│ 
-├── crawler/               # Module crawl dữ liệu job từ nhiều nguồn. Mỗi nguồn là một sub-folder riêng.
+│   │   ├── embed.py          # Generate vector embeddings via Ollama (bge-m3)
+│   │   ├── json_loader.py    # Load and parse raw data from JSON
+│   │   └── pipeline.py       # Orchestrate ingest flow
+│   ├── models/
+│   │   └── job_schema.py     # Standard schema for job data
+│   └── retrieval/            # Hybrid search + rerank
+│       ├── reranker.py
+│       └── search.py
+│
+├── crawler/                 # Crawl data from multiple sources
 │   ├── data_job/
 │   ├── itviec/
-│   └── topcv/ 
-│ 
-├── scripts/
-│   ├── ingest.py          # Script chạy end-to-end pipeline ingest từ terminal.
-│   └── main.py            # Script tiện ích, chạy các task thủ công khi cần.
-│ 
-├── .editorconfig
-├── .env
-├── .gitignore
-├── .python-version        # Chỉ định Python version dùng cho project (dùng với pyenv).
-├── Dockerfile             # Docker image cho application.
-├── README.md
-├── compose.yaml           # Docker Compose config để chạy PostgreSQL (với pgvector) local.
-├── langgraph.json         # Config LangGraph Server: định nghĩa graph entry point, dependencies.
-├── pyproject.toml         # Cấu hình project: dependencies, ruff (lint/format), uv.
+│   └── topcv/
+│
+├── docker/                  # Dockerfiles for services
+├── migrations/              # Alembic migrations
+├── scripts/                 # Helper scripts
+├── alembic.ini
+├── compose.yaml             # Docker Compose (PostgreSQL + pgvector)
+├── langgraph.json           # LangGraph Server config
+├── pyproject.toml
 └── uv.lock
 ```
 
 ---
 
-## 2. Flow 
-### 2.1. Flow ingest
+## Workflow
 
-Chạy một lần (hoặc theo batch) để nhập data vào hệ thống.
+### Ingest (run once or by batch)
 
-```
-crawler/itviec, crawler/topcv, crawler/data_job
-      ↓
-json_loader.py (load + parse raw data)
-      ↓
-embed.py (text → vector qua bge-m3)
-      ↓
-clients.py (lưu vào PostgreSQL)
+```text
+crawler/ (itviec, topcv, data_job)
+    → json_loader.py   — load & parse raw data
+    → embed.py         — text → vector (bge-m3)
+    → client.py        — save into PostgreSQL
 ```
 
----
+### Agent (runs whenever the user asks a question)
 
-### 2.2. Flow agent (query)
-
-Chạy mỗi khi user đặt câu hỏi hoặc tìm kiếm job.
-
-```
-User hỏi / tìm kiếm
-      ↓
-graph.py (LangGraph điều phối)
-      ↓
-nodes/ (nhận input → rewrite query → gọi search → rrf → rerank → generate (LLM) → output)
-      ↓
-retrieval/search.py (hybrid search PostgreSQL)
-      ↓
-retrieval/reranker.py (rerank kết quả)
-      ↓
-Trả kết quả / câu trả lời cho user
+```text
+User input
+    → graph.py         — LangGraph orchestration
+    → nodes/           — rewrite query → search → rrf → rerank → generate
+    → search.py        — PostgreSQL hybrid search
+    → reranker.py      — refine results
+    → Return response to user
 ```
 
 ---
 
-## 3. Hybrid search (BM25 + Vector)
+## Hybrid Search
 
-Tìm kiếm chạy hoàn toàn trong PostgreSQL, kết hợp 2 phương pháp:
+Search is performed entirely inside PostgreSQL, combining two approaches:
 
-| Phương pháp       | Cơ chế                                   | PostgreSQL feature                         |
-|-------------------|------------------------------------------|--------------------------------------------|
-| **BM25**          | Tìm kiếm từ khóa, khớp text chính xác    | `tsvector` + `tsquery` (full-text search)  |
-| **Vector search** | Tìm kiếm ngữ nghĩa, hiểu ý nghĩa câu hỏi | `pgvector` + cosine similarity             |
+| Method | Mechanism | PostgreSQL feature |
+|---|---|---|
+| **BM25** | Keyword-based search, exact text matching | `tsvector` + `tsquery` |
+| **Vector search** | Semantic search, understands query meaning | `pgvector` + cosine similarity |
 
-Kết quả từ 2 phương pháp được merge bằng **Reciprocal Rank Fusion (RRF)**, sau đó đưa qua `reranker.py` để tinh chỉnh lần cuối trước khi trả về agent.
+Results from both methods are merged using **Reciprocal Rank Fusion (RRF)**, then passed through `reranker.py` for refinement before being returned by the agent.
 
 ---
 
-## 4. Environment variables
+## Setup & Run
 
-Tạo file `.env` từ `.env.example`:
+### Requirements
 
+- Python 3.12+ (see `.python-version`)
+- [uv](https://github.com/astral-sh/uv)
+- Docker
+
+### Setup Steps
+
+**1. Install dependencies**
+```bash
+uv sync
+```
+
+**2. Create `.env` file**
 ```bash
 cp .env.example .env
 ```
+
+Fill in the environment variables:
 
 ```env
 DATABASE_URL=
 DATABASE_DB=
 DATABASE_PASSWORD=
 DATABASE_USER=
-MISTRAL_API_KEY=your_mistral_api_key_here
-OLLAMA_BASE_URL=http://localhost:11434       # Ollama embedding service
-RERANKER_URL=http://localhost:8000           # BGE Reranker Docker service
-LANGSMITH_API_KEY=                           # Optional, for LangSmith tracing
-LANGSMITH_TRACING=false                      # Set true to enable tracing
+
+MISTRAL_API_KEY=your_mistral_api_key
+OLLAMA_BASE_URL=http://localhost:11434     # Ollama embedding service
+RERANKER_URL=http://localhost:8001         # BGE Reranker service
+
+LANGSMITH_API_KEY=                         # Optional
+LANGSMITH_TRACING=false
 LANGSMITH_PROJECT=job-seeker
-TARGETARCH=                                  # Mac: arm64 | Win: amd64
+
+TARGETARCH=                                # arm64 (Mac) | amd64 (Windows)
+
+BACKEND_URL=http://localhost:8080
 ```
 
----
-
-## 5. Cài đặt và chạy
-
-### 5.1. Yêu cầu
-
-- Python 3.12+ (xem `.python-version`)
-- [uv](https://github.com/astral-sh/uv)
-- Docker
-
-### 5.2. Setup
-
+**3. Start PostgreSQL**
 ```bash
-# 1. Cài dependencies
-uv sync
+docker compose up -d
+```
 
-# 2. Setup .env
-cp .env.example .env
+**4. Run migrations** — see detailed instructions in the [Database Migration](#database-migration) section
+```bash
+uv run alembic upgrade head
+```
 
-# 3. Chạy PostgreSQL
-docker compose up
-
-# 4. Chạy migrations
-# Using psql
-psql "postgresql://postgres:postgres@localhost:5433/postgres" -f src/db/migrations/001_initial_schema.sql
-
-# Or using Docker
-docker exec -i job-seeker-db psql -U postgres -d postgres < src/db/migrations/001_initial_schema.sql
-
-# 5. Chạy ingest data
+**5. Ingest data**
+```bash
 uv run scripts/ingest.py
+```
 
-# 6. Start LangGraph server
+**6. Start LangGraph server**
+```bash
 uv run langgraph dev
 ```
 
-Opens LangGraph Studio at `http://localhost:2024`.
+Open LangGraph Studio at `http://localhost:2024`.
 
-For external access (webhooks, mobile testing, etc.), use `--tunnel`:
-
-```bash
-langgraph dev --tunnel
-```
-
-This exposes the server via a public URL through a tunnel.
+> To expose it externally (webhook, mobile testing), use `--tunnel`:
+> ```bash
+> langgraph dev --tunnel
+> ```
 
 ---
 
-## Tech stack
+## Web Chatbot
 
-| Thư viện                          | Mục đích                                           |
-|-----------------------------------|----------------------------------------------------|
-| `langgraph`                       | State machine agent — tìm kiếm và hỏi đáp về job   |
-| `asyncpg`                         | Kết nối PostgreSQL bất đồng bộ, không dùng ORM     |
-| `pgvector`                        | Vector search trong PostgreSQL                     |
-| `langchain-mistralai`             | LLM (ChatMistralAI) cho agent sinh câu trả lời     |
-| `httpx`                           | Tích hợp API Ollama để tạo vector embedding        |
-| `pydantic` / `pydantic-settings`  | Data modeling và config management                 |
-| `ruff`                            | Linter + formatter                                 |
-| `uv`                              | Package manager                                    |
+Full architecture with Chainlit FE + FastAPI BE + LangGraph:
 
----
+| Component                | File                          |
+|--------------------------|-------------------------------|
+| LangGraph (brain)        | `src/agent/graph.py`          |
+| Backend API (FastAPI)    | `src/api/app.py`              |
+| Chat history (PostgreSQL)| `src/chat_history/store.py`   |
+| Frontend (Chainlit)      | `src/frontend/chainlit_app.py`|
 
-## 6. Web chatbot (Chainlit FE + FastAPI BE + LangGraph)
-
-Project chạy theo kiến trúc đầy đủ:
-
-- **LangGraph (Brain):** `src/agent/graph.py`
-- **Backend API (FastAPI):** `src/api/app.py`
-- **Database chat history (SQLite):** `data/chat_history.db` qua `src/chat_history/store.py`
-- **Frontend web chat (Chainlit):** `src/chainlit_app.py` (gọi backend API)
-
-### 6.1. Chạy backend API
+### Run backend
 
 ```bash
-uv sync
 uv run uvicorn src.api.app:app --reload --port 8080
 ```
 
-### 6.2. Chạy Chainlit frontend
+### Run frontend
 
 ```bash
-uv run chainlit run src/chainlit_app.py -w --port 8888
+uv run chainlit run src/frontend/chainlit_app.py -w --port 8888
 ```
 
-Mở chatbot tại URL mà Chainlit in ra (thường là `http://localhost:8000`).
+---
 
-### 6.3. API chính
+## Docker
 
-- `POST /api/chat`
-  - Body:
-    ```json
-    {
-      "message": "python developer remote hanoi",
-      "user_id": "user_001",
-      "session_id": null
-    }
-    ```
-  - `session_id` có thể bỏ trống ở tin đầu, backend tự tạo session mới.
-- `GET /api/sessions/{session_id}/messages`
-  - Lấy lại toàn bộ lịch sử hội thoại của session.
+### Common commands
+
+```bash
+# Start services in detached mode
+docker compose up -d
+
+# Stop and remove all containers + volumes (full DB reset)
+docker compose down -v
+
+# Rebuild images from scratch without cache
+docker compose build --no-cache
+
+# View container status
+docker compose ps
+
+# View logs of a specific service
+docker logs <container_name>
+```
+
+> **Note:** `down -v` removes all database data. You will need to rerun migrations and ingest data afterward.
+
+---
+
+## Database Migration
+
+The project uses **Alembic** for database migration management. Migration files are located in `src/db/migrations/`.
+
+### Initialize (run only once for a new project setup)
+
+```bash
+uv run alembic init migrations
+```
+
+### Create a new migration
+
+Whenever the schema changes (new table, new column, etc.), create a new migration:
+
+```bash
+# Create migration file manually
+uv run alembic revision -m "change_description"
+
+# Or let Alembic auto-detect changes from models
+uv run alembic revision --autogenerate -m "change_description"
+```
+
+> After creating the file, open the migration inside `migrations/versions/` and review the `upgrade()` and `downgrade()` functions before running it.
+
+### Run migrations
+
+```bash
+# Apply all pending migrations
+uv run alembic upgrade head
+
+# Upgrade by exactly N steps
+uv run alembic upgrade +1
+```
+
+### Rollback
+
+```bash
+# Rollback to previous migration
+uv run alembic downgrade -1
+
+# Rollback to a specific revision
+uv run alembic downgrade <revision_id>
+
+# Rollback everything to the initial state
+uv run alembic downgrade base
+
+# History migration
+uv run alembic history
+
+# Current migration version
+uv run alembic current
+```
+
+### Check status
+
+```bash
+# Show current migration version
+uv run alembic current
+
+# Show full migration history
+uv run alembic history --verbose
+```
+
+---
+
+## Tech Stack
+
+| Library / Service                    | Purpose                                  |
+|--------------------------------------|------------------------------------------|
+| Python 3.12                          | Runtime                                  |
+| FastAPI + Uvicorn                    | Backend API                              |
+| Chainlit                             | Web chat UI                              |
+| LangGraph + LangChain Core           | Agent orchestration                      |
+| `langchain-mistralai`                | Mistral LLM client                       |
+| Ollama (bge-m3)                      | Embedding service                        |
+| PostgreSQL + pgvector + FTS          | Hybrid search (BM25 + vector)            |
+| `asyncpg`                            | Async PostgreSQL driver                  |
+| `alembic`                            | Database migration                       |
+| `httpx`                              | HTTP client for services                 |
+| `curl-cffi`                          | Crawler TLS impersonation                |
+| LangSmith                            | Tracing (optional)                       |
+| `pydantic` / `pydantic-settings`     | Data modeling and configuration          |
+| `black`                              | Code formatter                           |
+| `uv`                                 | Package manager                          |

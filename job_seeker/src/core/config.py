@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     # Embedding (Ollama)
     ollama_base_url: str
 
-    # BGE Reranker (Docker service at port 8000)
-    reranker_url: str = "http://localhost:8000"
+    # BGE Reranker (Docker service at port 8001)
+    reranker_url: str = "http://localhost:8001"
 
     # LangSmith tracing
     langsmith_tracing: bool = False

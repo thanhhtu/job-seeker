@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import AIMessage, HumanMessage
@@ -7,8 +9,18 @@ from langchain_core.messages import AIMessage, HumanMessage
 from src.agent.graph import build_graph
 from src.api.schemas import ChatHistoryResponse, ChatMessage, ChatRequest, ChatResponse
 from src.chat_history.store import ChatHistoryStore
+from src.db.client import close_pool
 
-app = FastAPI(title="Job Seeker Chat API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
+    yield
+    # shutdown
+    await close_pool()
+
+
+app = FastAPI(title="Job Seeker Chat API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,11 +45,11 @@ async def chat(payload: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=400, detail="Message must not be empty.")
 
     try:
-        session_id = store.ensure_session(payload.user_id, payload.session_id)
+        session_id = await store.ensure_session(payload.user_id, payload.session_id)
     except ValueError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
-    history_rows = store.get_messages(session_id)
+    history_rows = await store.get_messages(session_id)
     history_messages = []
     for row in history_rows:
         if row["role"] == "user":
@@ -51,8 +63,8 @@ async def chat(payload: ChatRequest) -> ChatResponse:
     if not assistant_message:
         assistant_message = "I could not generate a response. Please try again."
 
-    store.add_message(session_id=session_id, role="user", content=message)
-    store.add_message(session_id=session_id, role="assistant", content=assistant_message)
+    await store.add_message(session_id=session_id, role="user", content=message)
+    await store.add_message(session_id=session_id, role="assistant", content=assistant_message)
 
     return ChatResponse(
         session_id=session_id,
@@ -63,7 +75,7 @@ async def chat(payload: ChatRequest) -> ChatResponse:
 
 @app.get("/api/sessions/{session_id}/messages", response_model=ChatHistoryResponse)
 async def get_session_messages(session_id: str) -> ChatHistoryResponse:
-    rows = store.get_messages(session_id)
+    rows = await store.get_messages(session_id)
     messages = [
         ChatMessage(
             role=row["role"],
