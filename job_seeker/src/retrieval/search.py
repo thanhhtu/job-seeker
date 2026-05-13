@@ -3,8 +3,7 @@ Retrieval: BM25 (PostgreSQL tsvector) + Vector (pgvector) search.
 """
 from __future__ import annotations
 
-import asyncpg
-
+from src.agent.memory import keywords_from_rewritten
 from src.core.config import settings
 from src.core.logger import get_logger
 from src.db.client import get_pool
@@ -25,8 +24,18 @@ async def _get_embedding(text: str) -> list[float]:
         # Ollama returns {"embeddings": [[...]]}
         return data["embeddings"][0]
 
-async def bm25_search(parsed_query: dict, top_k: int = 20) -> list[Job]:
-    keywords: list[str] = parsed_query.get("keywords", [])
+async def bm25_search(
+    parsed_query: dict,
+    top_k: int = 20,
+    *,
+    rewritten_query: str | None = None,
+) -> list[Job]:
+    keywords: list[str] = list(parsed_query.get("keywords") or [])
+    rw = (rewritten_query or "").strip()
+    if rw:
+        rw_kws = keywords_from_rewritten(rw)
+        if rw_kws:
+            keywords = rw_kws
     if not keywords:
         logger.warning("bm25_search called with no keywords, returning empty list")
         return []
@@ -86,10 +95,23 @@ async def bm25_search(parsed_query: dict, top_k: int = 20) -> list[Job]:
     logger.info(f"BM25 search returned {len(jobs)} results for keywords={keywords}")
     return jobs
 
-async def vector_search(parsed_query: dict, top_k: int = 20) -> list[Job]:
-    keyword_str = " ".join(parsed_query.get("keywords", []))
-    location_str = parsed_query.get("location", "")
-    query_text = f"{keyword_str} {location_str}".strip()
+async def vector_search(
+    parsed_query: dict,
+    top_k: int = 20,
+    *,
+    rewritten_query: str | None = None,
+    conversation_summary: str | None = None,
+) -> list[Job]:
+    rw = (rewritten_query or "").strip()
+    if rw:
+        query_text = rw
+    else:
+        keyword_str = " ".join(parsed_query.get("keywords", []))
+        location_str = parsed_query.get("location", "")
+        query_text = f"{keyword_str} {location_str}".strip()
+    summary = (conversation_summary or "").strip()
+    if summary:
+        query_text = f"{summary}\n{query_text}".strip()
 
     if not query_text:
         logger.warning("vector_search: empty query text, returning empty list")

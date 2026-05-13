@@ -7,7 +7,6 @@ from src.agent.state import JobSearchState
 
 
 def _extract_text(content) -> str:
-    """Normalize content: str hoặc list[dict] → str thuần."""
     if isinstance(content, str):
         return content.strip()
     if isinstance(content, list):
@@ -22,21 +21,18 @@ def _extract_text(content) -> str:
 
 
 def input_node(state: JobSearchState) -> dict:
-    """Extract raw_query from latest user turn (including empty content)."""
     messages = state.get("messages") or []
 
     for msg in reversed(messages):
         if isinstance(msg, HumanMessage):
             return {
-                "raw_query": _extract_text(msg.content),
-                "needs_input_prompt": "",
+                "raw_query": _extract_text(msg.content)
             }
-        elif isinstance(msg, dict) and msg.get("role") == "user":
+        if isinstance(msg, dict) and msg.get("role") == "user":
             return {
-                "raw_query": _extract_text(msg.get("content") or ""),
-                "needs_input_prompt": "",
+                "raw_query": _extract_text(msg.get("content") or "")
             }
 
-    # Fallback only when there is no user message in this state snapshot.
-    existing = _extract_text(state.get("raw_query") or "")
-    return {"raw_query": existing, "needs_input_prompt": ""}
+    return {
+        "raw_query": _extract_text(state.get("raw_query") or "")
+    }

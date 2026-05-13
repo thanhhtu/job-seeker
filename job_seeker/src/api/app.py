@@ -1,23 +1,46 @@
 from __future__ import annotations
 
+# LangSmith đọc os.environ — pydantic chỉ load .env vào Settings, không set env.
+from src.core.tracing import setup_langsmith_tracing
+
+setup_langsmith_tracing()
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool
 
 from src.agent.graph import build_graph
 from src.api.schemas import ChatHistoryResponse, ChatMessage, ChatRequest, ChatResponse
 from src.chat_history.store import ChatHistoryStore
+from src.core.config import settings
+from src.core.logger import get_logger
 from src.db.client import close_pool
+from src.db.langgraph_checkpoint import (
+    ensure_langgraph_checkpoint_schema,
+    postgres_conninfo_for_psycopg,
+)
+
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup
-    yield
-    # shutdown
-    await close_pool()
+    dsn = postgres_conninfo_for_psycopg(settings.database_url)
+    await ensure_langgraph_checkpoint_schema(dsn)
+    pool = AsyncConnectionPool(conninfo=dsn, max_size=10, open=False)
+    await pool.open()
+    checkpointer = AsyncPostgresSaver(pool)
+    app.state.graph = build_graph(checkpointer)
+    logger.info("LangGraph compiled with Postgres checkpointer (thread_id = session_id)")
+    try:
+        yield
+    finally:
+        await pool.close()
+        await close_pool()
 
 
 app = FastAPI(title="Job Seeker Chat API", version="1.0.0", lifespan=lifespan)
@@ -29,7 +52,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-graph = build_graph()
 store = ChatHistoryStore()
 
 
@@ -49,16 +71,11 @@ async def chat(payload: ChatRequest) -> ChatResponse:
     except ValueError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
-    history_rows = await store.get_messages(session_id)
-    history_messages = []
-    for row in history_rows:
-        if row["role"] == "user":
-            history_messages.append(HumanMessage(content=row["content"]))
-        else:
-            history_messages.append(AIMessage(content=row["content"]))
-    history_messages.append(HumanMessage(content=message))
+    graph = app.state.graph
+    config = {"configurable": {"thread_id": session_id}}
 
-    result = await graph.ainvoke({"messages": history_messages})
+    # Chỉ gửi tin nhắn mới; checkpoint khôi phục messages + parsed_query + summary.
+    result = await graph.ainvoke({"messages": [HumanMessage(content=message)]}, config)
     assistant_message = (result.get("output") or "").strip()
     if not assistant_message:
         assistant_message = "I could not generate a response. Please try again."

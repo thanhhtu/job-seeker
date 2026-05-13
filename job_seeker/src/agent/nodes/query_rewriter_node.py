@@ -1,8 +1,4 @@
-# src/agent/nodes/query_rewriter_node.py
 from __future__ import annotations
-
-import json
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_mistralai import ChatMistralAI
@@ -13,7 +9,6 @@ from src.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Lazy init — tránh lỗi nếu settings chưa load khi module được import
 _llm: ChatMistralAI | None = None
 
 
@@ -29,53 +24,61 @@ def _get_llm() -> ChatMistralAI:
 
 
 _SYSTEM_PROMPT = """
-You are a job search query analysis assistant.
-Your task is to convert a user's search query into structured JSON.
+You are a search query optimisation assistant for a job search engine.
 
-Return JSON with the following fields (omit any field if information is not available):
+You will receive a JSON object containing structured job search intent.
+Your task: produce a single, concise English search query string (≤ 20 words)
+that a retrieval system can use directly.
+
+Rules:
+- Prioritise role, keywords, location, and job_level.
+- Do NOT include salary or experience_years in the query string.
+- Return ONLY the query string — no JSON, no markdown, no explanation.
+
+Example input:
 {
-  "keywords": [],          // list of skill/job keywords (in English)
-  "location": "",          // job location (e.g., "Hanoi", "Ho Chi Minh City")
-  "job_level": "",         // "intern", "fresher", "junior", "mid", "senior", "lead", "manager"
-  "work_mode": "",         // "remote", "onsite", "hybrid"
-  "experience_years": 0,   // minimum years of experience (integer)
-  "salary_min": 0          // desired minimum salary (USD/month, float)
+    "role": "Backend Developer", 
+    "keywords": ["Python", "FastAPI"], 
+    "location": "Hanoi", 
+    "job_level": "senior"
 }
 
-Return only pure JSON, no markdown, no additional explanation.
+Example output:
+senior Backend Developer Python FastAPI Hanoi
 """
 
 
-def _extract_json(text: str) -> dict:
-    try:
-        return json.loads(text.strip())
-    except json.JSONDecodeError:
-        pass
-
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    logger.warning("Could not parse LLM response as JSON: %r", text)
-    return {}
-
-
 async def query_rewriter_node(state: JobSearchState) -> dict:
-    raw_query = state.get("raw_query", "").strip()
-    if not raw_query:
-        logger.warning("query_rewriter_node: empty raw_query")
-        return {"parsed_query": {}}
+    """
+    Converts structured parsed_query → a flat rewritten_query string for retrieval.
 
-    logger.info("Rewriting query: %r", raw_query)
+    Reads:  state["raw_query"]    — fallback if parsed_query is empty
+            state["parsed_query"] — structured slots from understand_node
+            state["conversation_summary"] — dialogue context for the rewriter
+    Writes: state["rewritten_query"]
+    """
+    parsed_query: dict = state.get("parsed_query") or {}
+    raw_query: str = (state.get("raw_query") or "").strip()
+    summary: str = (state.get("conversation_summary") or "").strip()
+
+    if not parsed_query and not raw_query:
+        logger.warning("query_rewriter_node: both parsed_query and raw_query are empty")
+        return {"rewritten_query": ""}
+
+    parts: list[str] = []
+    if summary:
+        parts.append("Conversation summary:\n" + summary)
+    if parsed_query:
+        parts.append("Structured intent (JSON-like):\n" + str(parsed_query))
+    if raw_query:
+        parts.append("Latest user message:\n" + raw_query)
+    user_content = "\n\n".join(parts)
 
     response = await _get_llm().ainvoke([
         SystemMessage(content=_SYSTEM_PROMPT),
-        HumanMessage(content=raw_query),
+        HumanMessage(content=user_content),
     ])
-    parsed_query = _extract_json(response.content)
 
-    logger.info("Parsed query: %s", parsed_query)
-    return {"parsed_query": parsed_query}
+    rewritten = response.content.strip()
+    logger.info("query_rewriter_node rewritten_query: %r", rewritten)
+    return {"rewritten_query": rewritten}

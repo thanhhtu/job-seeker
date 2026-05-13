@@ -57,10 +57,10 @@ def output_node(state: JobSearchState) -> dict:
     """
     reranked_results: list[Job] = state.get("reranked_results") or []
     generated_answer: str = (state.get("generated_answer") or "").strip()
-    needs_input_prompt: str = (state.get("needs_input_prompt") or "").strip()
-
-    if needs_input_prompt:
-        final_output = needs_input_prompt
+    clarification_prompt: str = (state.get("clarification_prompt") or "").strip()
+    
+    if clarification_prompt:
+        final_output = clarification_prompt
     elif not reranked_results:
         final_output = (
             "No jobs found matching your criteria.\n"

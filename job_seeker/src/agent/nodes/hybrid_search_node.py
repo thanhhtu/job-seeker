@@ -10,12 +10,23 @@ logger = get_logger(__name__)
 
 
 async def hybrid_search_node(state: JobSearchState) -> dict:
-    parsed_query = state["parsed_query"]
-    logger.info(f"Running hybrid search with parsed_query={parsed_query}")
+    parsed_query = state.get("parsed_query") or {}
+    rewritten = (state.get("rewritten_query") or "").strip()
+    summary = (state.get("conversation_summary") or "").strip()
+    logger.info(
+        "Running hybrid search parsed_keys=%s rewritten=%r",
+        list(parsed_query.keys()),
+        rewritten[:80] if rewritten else "",
+    )
 
     bm25_results, vector_results = await asyncio.gather(
-        bm25_search(parsed_query, top_k=20),
-        vector_search(parsed_query, top_k=20),
+        bm25_search(parsed_query, top_k=20, rewritten_query=rewritten or None),
+        vector_search(
+            parsed_query,
+            top_k=20,
+            rewritten_query=rewritten or None,
+            conversation_summary=summary or None,
+        ),
     )
 
     logger.info(
