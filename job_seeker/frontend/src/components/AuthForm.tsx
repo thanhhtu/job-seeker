@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { toast } from "react-hot-toast";
 import { ApiError, login, register } from "@/api";
 import { UserInfo } from "@/types/user";
 import { STORAGE_KEYS } from "@/constant/storage";
@@ -11,12 +12,10 @@ export function AuthForm({ onLogin }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const data = mode === "login"
@@ -26,7 +25,7 @@ export function AuthForm({ onLogin }: Props) {
       localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(data.user));
       onLogin(data.access_token, data.user);
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message);
+      if (err instanceof ApiError) toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -59,11 +58,10 @@ export function AuthForm({ onLogin }: Props) {
           minLength={mode === "register" ? 8 : 1}
           className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
         />
-        {error && <p className="text-[10px] text-red-500 font-bold px-1">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#5d5fef] hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-[13px] shadow-lg shadow-indigo-100 transition-all active:scale-95 mt-1 disabled:opacity-60"
+          className="w-full hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-[13px] shadow-lg shadow-indigo-100 transition-all active:scale-95 mt-1 disabled:opacity-60"
         >
           {loading ? "…" : mode === "login" ? "Sign In" : "Register"}
         </button>
@@ -71,7 +69,7 @@ export function AuthForm({ onLogin }: Props) {
 
       <button
         type="button"
-        onClick={() => { setMode((m) => (m === "login" ? "register" : "login")); setError(null); }}
+        onClick={() => setMode((m) => (m === "login" ? "register" : "login"))}
         className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 py-3 rounded-xl transition-colors"
       >
         {mode === "login" ? "New here? Create an account" : "Already have an account? Login"}

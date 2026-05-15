@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { Toaster, toast } from "react-hot-toast";
 import { ChatArea } from "@/components/ChatArea";
 import { Sidebar } from "@/components/Sidebar";
 import { ApiError, getSessionMessages, listSessions, sendMessage } from "@/api";
@@ -17,7 +18,6 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = localStorage.getItem(STORAGE_KEYS.token);
@@ -39,7 +39,7 @@ export default function App() {
       const data = await listSessions(token);
       setSessions(data);
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message);
+      if (err instanceof ApiError) toast.error(err.message);
     } finally {
       setLoadingSessions(false);
     }
@@ -50,12 +50,11 @@ export default function App() {
   const handleSelectSession = async (id: string) => {
     if (!token) return;
     setCurrentSessionId(id);
-    setError(null);
     try {
       const msgs = await getSessionMessages(id, token);
       setMessages(msgs);
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message);
+      if (err instanceof ApiError) toast.error(err.message);
     }
   };
 
@@ -65,7 +64,6 @@ export default function App() {
     if (!text || isSending) return;
 
     setIsSending(true);
-    setError(null);
     setInput("");
 
     const optimistic: ChatMessage = { role: "user", content: text };
@@ -88,7 +86,7 @@ export default function App() {
     } catch (err) {
       setMessages((prev) => prev.slice(0, -1));
       setInput(text);
-      if (err instanceof ApiError) setError(err.message);
+      if (err instanceof ApiError) toast.error(err.message);
     } finally {
       setIsSending(false);
     }
@@ -96,18 +94,39 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#f8f9fd] p-3 md:p-4 gap-4 overflow-hidden font-sans">
-      <div className="w-[280px] shrink-0 bg-white rounded-[32px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          error: {
+            duration: 5000,
+            style: { background: "#fff", color: "#dc2626", border: "1px solid #fecaca" },
+          },
+        }}
+      />
+      <div className="w-[320px] shrink-0 bg-white rounded-[32px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
         <Sidebar
           token={token}
           user={user}
           sessions={sessions}
           currentSessionId={currentSessionId}
           loadingSessions={loadingSessions}
-          onLogin={(t, u) => { setToken(t); setUser(u); }}
-          onLogout={() => { setToken(null); setUser(null); setSessions([]); setCurrentSessionId(null); setMessages([]); }}
+          onLogin={(t, u) => { 
+            setToken(t); 
+            setUser(u); 
+          }}
+          onLogout={() => { 
+            setToken(null); 
+            setUser(null); 
+            setSessions([]); 
+            setCurrentSessionId(null); 
+            setMessages([]); 
+          }}
           onRefreshSessions={() => void fetchSessions()}
           onSelectSession={(id) => void handleSelectSession(id)}
-          onNewChat={() => { setCurrentSessionId(null); setMessages([]); setError(null); }}
+          onNewChat={() => { 
+            setCurrentSessionId(null); 
+            setMessages([]); 
+          }}
         />
       </div>
       <div className="flex-1 bg-white rounded-[32px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
@@ -116,7 +135,6 @@ export default function App() {
           sessionId={currentSessionId}
           input={input}
           isSending={isSending}
-          error={error}
           onInputChange={setInput}
           onSend={handleSend}
         />

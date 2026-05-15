@@ -8,12 +8,11 @@ type Props = {
   sessionId: string | null;
   input: string;
   isSending: boolean;
-  error: string | null;
   onInputChange: (v: string) => void;
   onSend: (e: FormEvent) => void;
 };
 
-export function ChatArea({ messages, input, isSending, error, onInputChange, onSend }: Props) {
+export function ChatArea({ messages, input, isSending, onInputChange, onSend }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,13 +51,8 @@ export function ChatArea({ messages, input, isSending, error, onInputChange, onS
       </div>
 
       {/* Input bar */}
-      <div className="w-full px-6 ">
-        <div className="max-w-4xl mx-auto relative pb-8">
-          {error && (
-            <div className="absolute -top-12 left-0 right-0 mx-auto w-max bg-red-50 text-red-600 text-xs py-1.5 px-4 rounded-full border border-red-100 shadow-sm">
-              {error}
-            </div>
-          )}
+      <div className="w-full px-6 absolute bottom-0 left-0 right-0">
+        <div className="max-w-4xl mx-auto pb-8">
           <form
             onSubmit={onSend}
             className="flex items-center bg-white rounded-[40px] p-2 pl-6 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-50 transition-all focus-within:shadow-[0_10px_40px_rgba(0,0,0,0.1)]"
@@ -73,12 +67,12 @@ export function ChatArea({ messages, input, isSending, error, onInputChange, onS
               placeholder="Nhập tin nhắn..."
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
-              className="flex-1 bg-transparent py-3 text-[16px] text-slate-600 placeholder:text-slate-400 border-0 border-none focus:ring-0 focus:outline-none"
+              className="flex-1 bg-transparent py-3 text-[15px] text-slate-600 placeholder:text-slate-400 border-0 border-none focus:ring-0 focus:outline-none"
             />
             <button
               type="submit"
               disabled={!input.trim() || isSending}
-              className="max-w-12 h-12 rounded-full bg-[#5d5fef] hover:bg-indigo-600 text-white flex items-center justify-center shadow-[0_5px_15px_rgba(93,95,239,0.4)] transition-all active:scale-95 disabled:opacity-40 shrink-0 ml-2"
+              className="max-w-12 h-12 !rounded-full hover:bg-indigo-600 text-white flex items-center justify-center shadow-[0_5px_15px_rgba(93,95,239,0.4)] transition-all active:scale-95 disabled:opacity-40 shrink-0 ml-2"
             >
               {isSending ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
