@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import { ApiError, login, register } from "@/api";
 import { UserInfo } from "@/types/user";
 import { STORAGE_KEYS } from "@/constant/storage";
+import { Button, Input } from "./common";
 
 type Props = {
   onLogin: (token: string, user: UserInfo) => void;
@@ -34,46 +35,47 @@ export function AuthForm({ onLogin }: Props) {
   return (
     <div className="bg-slate-50/80 rounded-[28px] p-5 border border-slate-100 flex flex-col gap-4">
       <div>
-        <h2 className="text-[15px] font-black text-slate-900 leading-tight">Welcome Back</h2>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+        <h2 className="font-black text-slate-900 leading-tight">Welcome Back</h2>
+        <p className="font-bold text-slate-400 uppercase tracking-widest mt-1">
           Sign in to your AI workspace
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
+        <Input
           type="email"
           placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+          className="!rounded-xl"
         />
-        <input
+        <Input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={mode === "register" ? 8 : 1}
-          className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+          className="!rounded-xl"
         />
-        <button
+        <Button
           type="submit"
           disabled={loading}
-          className="w-full hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-[13px] shadow-lg shadow-indigo-100 transition-all active:scale-95 mt-1 disabled:opacity-60"
+          className="w-full font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-100 active:scale-95 mt-1"
         >
           {loading ? "…" : mode === "login" ? "Sign In" : "Register"}
-        </button>
+        </Button>
       </form>
 
-      <button
+      <Button
         type="button"
         onClick={() => setMode((m) => (m === "login" ? "register" : "login"))}
-        className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 py-3 rounded-xl transition-colors"
+        variant="secondary"
+        className="font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl"
       >
         {mode === "login" ? "New here? Create an account" : "Already have an account? Login"}
-      </button>
+      </Button>
     </div>
   );
 }

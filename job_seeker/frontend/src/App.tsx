@@ -103,7 +103,7 @@ export default function App() {
           },
         }}
       />
-      <div className="w-[320px] shrink-0 bg-white rounded-[32px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+      <div className="w-[320px] shrink-0 bg-white rounded-[28px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
         <Sidebar
           token={token}
           user={user}
@@ -129,7 +129,7 @@ export default function App() {
           }}
         />
       </div>
-      <div className="flex-1 bg-white rounded-[32px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white rounded-[28px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
         <ChatArea
           messages={messages}
           sessionId={currentSessionId}

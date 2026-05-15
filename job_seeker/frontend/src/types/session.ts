@@ -1,4 +1,3 @@
-
 export type SessionSummary = {
   session_id: string;
   created_at: string;

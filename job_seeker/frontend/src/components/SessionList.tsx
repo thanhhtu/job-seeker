@@ -1,4 +1,5 @@
 import { SessionSummary } from "@/types/session";
+import { Button } from "./common";
 
 type Props = {
   sessions: SessionSummary[];
@@ -51,7 +52,7 @@ export function SessionList({ sessions, currentSessionId, hasToken, onSelect }: 
 
       {older.length > 0 && (
         <div className="space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-300 px-3 mb-2">Last 7 Days</p>
+          <p className="font-bold uppercase tracking-[0.15em] text-slate-300 px-3 mb-2">Last 7 Days</p>
           {older.map((s) => (
             <SessionRow
               key={s.session_id}
@@ -68,17 +69,17 @@ export function SessionList({ sessions, currentSessionId, hasToken, onSelect }: 
 
 function SessionRow({ session, active, onSelect }: { session: SessionSummary; active: boolean; onSelect: () => void }) {
   return (
-    <button
+    <Button
       type="button"
       onClick={onSelect}
-      className={`w-full text-left rounded-2xl px-4 py-3 transition-all flex items-center gap-3 group relative ${
+      className={`w-full text-left rounded-2xl px-4 py-3 transition-all flex items-center gap-3 group relative !bg-transparent !p-0 !border-0 !shadow-none ${
         active ? "bg-indigo-50/70 text-indigo-700" : "text-slate-600 hover:bg-slate-50"
       }`}
     >
       <svg className={`shrink-0 ${active ? "text-indigo-500" : "text-slate-300"}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <span className={`flex-1 truncate text-[13px] font-bold ${active ? "text-indigo-800" : "text-slate-700"}`}>
+      <span className={`flex-1 truncate font-bold ${active ? "text-indigo-800" : "text-slate-700"}`}>
         {sessionLabel(session)}
       </span>
 
@@ -89,6 +90,6 @@ function SessionRow({ session, active, onSelect }: { session: SessionSummary; ac
           <span className="w-2 h-2 rounded-full bg-indigo-500 ml-1 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
         </div>
       )}
-    </button>
+    </Button>
   );
 }

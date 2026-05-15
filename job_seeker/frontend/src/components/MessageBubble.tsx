@@ -16,10 +16,10 @@ function parseMarkdown(text: string) {
       const [, num, bold, rest] = numberedBold;
       elements.push(
         <div key={i} className="flex gap-3 py-1.5">
-          <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-semibold flex items-center justify-center mt-0.5">
+          <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 font-semibold flex items-center justify-center mt-0.5">
             {num}
           </span>
-          <p className="text-[14.5px] leading-relaxed text-slate-700">
+          <p className="leading-relaxed text-slate-700">
             <span className="font-semibold text-slate-800">{bold}:</span>{" "}
             {rest}
           </p>
@@ -35,10 +35,10 @@ function parseMarkdown(text: string) {
       const [, num, rest] = plainNumbered;
       elements.push(
         <div key={i} className="flex gap-3 py-1.5">
-          <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-semibold flex items-center justify-center mt-0.5">
+          <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 font-semibold flex items-center justify-center mt-0.5">
             {num}
           </span>
-          <p className="text-[14.5px] leading-relaxed text-slate-700">{rest}</p>
+          <p className="leading-relaxed text-slate-700">{rest}</p>
         </div>
       );
       i++;
@@ -49,7 +49,7 @@ function parseMarkdown(text: string) {
     if (line.includes("**")) {
       const parts = line.split(/\*\*(.+?)\*\*/g);
       elements.push(
-        <p key={i} className="text-[14.5px] leading-relaxed text-slate-700 py-0.5">
+        <p key={i} className="leading-relaxed text-slate-700 py-0.5">
           {parts.map((part, idx) =>
             idx % 2 === 1 ? (
               <span key={idx} className="font-semibold text-slate-800">
@@ -74,7 +74,7 @@ function parseMarkdown(text: string) {
 
     // Normal text
     elements.push(
-      <p key={i} className="text-[14.5px] leading-relaxed text-slate-700 py-0.5">
+      <p key={i} className="leading-relaxed text-slate-700 py-0.5">
         {line}
       </p>
     );
@@ -104,15 +104,15 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
           </svg>
         </div>
 
-        {/* Text */}
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-[14.5px] leading-relaxed text-slate-800 font-medium">
+          <p className="leading-relaxed text-slate-800 font-medium">
             {message.content}
           </p>
         </div>
 
         {/* Copy icon — visible on hover */}
-        {/* <button
+        <button
           onClick={handleCopy}
           className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-slate-100"
           title="Copy"
@@ -122,7 +122,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
           ) : (
             <Copy className="w-4 h-4 text-slate-400" />
           )}
-        </button> */}
+        </button>
       </div>
     );
   }
@@ -138,10 +138,9 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        {/* Header label */}
         <div className="flex items-center gap-1.5 mb-3">
-          <span className="text-[11px] font-bold text-indigo-500 tracking-wider uppercase">
-            CHAT Job Seeker
+          <span className="font-bold text-indigo-500 tracking-wider uppercase">
+            Chat Job Seeker
           </span>
           <span className="text-slate-300">·</span>
           <svg
@@ -160,7 +159,6 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
 
         {/* Action row */}
         <div className="flex items-center gap-1 mt-4">
-          {/* Copy */}
           <button
             onClick={handleCopy}
             className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
