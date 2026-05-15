@@ -1,4 +1,6 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -19,6 +21,19 @@ class Settings(BaseSettings):
     langsmith_tracing: bool = False
     langsmith_api_key: str = ""
     langsmith_project: str = "job-seeker"
+
+    # Auth (JWT)
+    jwt_secret: str = "somethingsecret"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int
+
+    @field_validator("jwt_secret", mode="after")
+    @classmethod
+    def jwt_secret_non_empty(cls, v: str) -> str:
+        s = (v or "").strip()
+        if not s:
+            return "dev-only-change-me-use-a-long-random-secret"
+        return s
 
 
 settings = Settings()

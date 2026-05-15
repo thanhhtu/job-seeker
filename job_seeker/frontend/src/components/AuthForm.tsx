@@ -1,0 +1,81 @@
+import { FormEvent, useState } from "react";
+import { ApiError, login, register } from "@/api";
+import { UserInfo } from "@/types/user";
+import { STORAGE_KEYS } from "@/constant/storage";
+
+type Props = {
+  onLogin: (token: string, user: UserInfo) => void;
+};
+
+export function AuthForm({ onLogin }: Props) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const data = mode === "login"
+        ? await login(email, password)
+        : await register(email, password);
+      localStorage.setItem(STORAGE_KEYS.token, data.access_token);
+      localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(data.user));
+      onLogin(data.access_token, data.user);
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-slate-50/80 rounded-[28px] p-5 border border-slate-100 flex flex-col gap-4">
+      <div>
+        <h2 className="text-[15px] font-black text-slate-900 leading-tight">Welcome Back</h2>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+          Sign in to your AI workspace
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <input
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={mode === "register" ? 8 : 1}
+          className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+        />
+        {error && <p className="text-[10px] text-red-500 font-bold px-1">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#5d5fef] hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-[13px] shadow-lg shadow-indigo-100 transition-all active:scale-95 mt-1 disabled:opacity-60"
+        >
+          {loading ? "…" : mode === "login" ? "Sign In" : "Register"}
+        </button>
+      </form>
+
+      <button
+        type="button"
+        onClick={() => { setMode((m) => (m === "login" ? "register" : "login")); setError(null); }}
+        className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 py-3 rounded-xl transition-colors"
+      >
+        {mode === "login" ? "New here? Create an account" : "Already have an account? Login"}
+      </button>
+    </div>
+  );
+}

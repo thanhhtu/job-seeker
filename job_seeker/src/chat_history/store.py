@@ -62,3 +62,40 @@ class ChatHistoryStore:
                 session_id,
             )
         return [dict(row) for row in rows]
+
+    async def get_session_owner(self, session_id: str) -> str | None:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT user_id FROM chat_sessions WHERE session_id = $1",
+                session_id,
+            )
+        if row is None:
+            return None
+        return str(row["user_id"])
+
+    async def list_sessions_for_user(self, user_id: str) -> list[dict[str, Any]]:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT
+                    s.session_id,
+                    s.created_at,
+                    (
+                        SELECT MAX(m.created_at)
+                        FROM chat_messages m
+                        WHERE m.session_id = s.session_id
+                    ) AS last_message_at,
+                    (
+                        SELECT COUNT(*)::bigint
+                        FROM chat_messages m
+                        WHERE m.session_id = s.session_id
+                    ) AS message_count
+                FROM chat_sessions s
+                WHERE s.user_id = $1
+                ORDER BY s.created_at DESC
+                """,
+                user_id,
+            )
+        return [dict(row) for row in rows]
