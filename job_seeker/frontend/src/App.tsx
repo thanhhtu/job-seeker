@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { ChatArea } from "@/components/ChatArea";
 import { Sidebar } from "@/components/Sidebar";
@@ -8,6 +8,13 @@ import { SessionSummary } from "@/types/session";
 import { UserInfo } from "@/types/user";
 import { getGuestId } from "@/utils/ids";
 import { STORAGE_KEYS } from "@/constant/storage";
+import { colors } from "@/theme/colors";
+import {
+  loadHiddenSessionIds,
+  loadSessionTitles,
+  persistHiddenSession,
+  persistSessionTitle,
+} from "@/utils/sessionPrefs";
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
@@ -18,6 +25,13 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [sessionTitles, setSessionTitles] = useState<Record<string, string>>(loadSessionTitles);
+  const [hiddenSessionIds, setHiddenSessionIds] = useState<Set<string>>(loadHiddenSessionIds);
+
+  const visibleSessions = useMemo(
+    () => sessions.filter((s) => !hiddenSessionIds.has(s.session_id)),
+    [sessions, hiddenSessionIds]
+  );
 
   useEffect(() => {
     const t = localStorage.getItem(STORAGE_KEYS.token);
@@ -46,6 +60,20 @@ export default function App() {
   }, [token]);
 
   useEffect(() => { void fetchSessions(); }, [fetchSessions]);
+
+  const handleRenameSession = (sessionId: string, title: string) => {
+    persistSessionTitle(sessionId, title);
+    setSessionTitles((prev) => ({ ...prev, [sessionId]: title }));
+  };
+
+  const handleDeleteSession = (sessionId: string) => {
+    persistHiddenSession(sessionId);
+    setHiddenSessionIds((prev) => new Set([...prev, sessionId]));
+    if (currentSessionId === sessionId) {
+      setCurrentSessionId(null);
+      setMessages([]);
+    }
+  };
 
   const handleSelectSession = async (id: string) => {
     if (!token) return;
@@ -93,23 +121,31 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#f8f9fd] p-3 md:p-4 gap-4 overflow-hidden font-sans">
+    <div className={`flex h-screen w-full ${colors.page.shellBg} !p-4 md:p-4 gap-4 overflow-hidden font-sans`}>
       <Toaster
         position="top-right"
         toastOptions={{
           error: {
             duration: 5000,
-            style: { background: "#fff", color: "#dc2626", border: "1px solid #fecaca" },
+            style: {
+              background: colors.basic.bgWhite,
+              color: colors.status.error,
+              border: `1px solid ${colors.status.errorBorder}`,
+            },
           },
         }}
       />
-      <div className="w-[320px] shrink-0 bg-white rounded-[28px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+      <div 
+        className={`w-[320px] shrink-0 ${colors.basic.bgWhite} rounded-[28px] border ${colors.neutral.border100} flex flex-col overflow-y-hidden overflow-x-visible`}
+        style={{ boxShadow: "rgba(0, 0, 0, 0.09) 0px 3px 12px" }}
+      >
         <Sidebar
           token={token}
           user={user}
-          sessions={sessions}
+          sessions={visibleSessions}
           currentSessionId={currentSessionId}
           loadingSessions={loadingSessions}
+          sessionTitles={sessionTitles}
           onLogin={(t, u) => { 
             setToken(t); 
             setUser(u); 
@@ -123,13 +159,15 @@ export default function App() {
           }}
           onRefreshSessions={() => void fetchSessions()}
           onSelectSession={(id) => void handleSelectSession(id)}
+          onRenameSession={handleRenameSession}
+          onDeleteSession={handleDeleteSession}
           onNewChat={() => { 
             setCurrentSessionId(null); 
             setMessages([]); 
           }}
         />
       </div>
-      <div className="flex-1 bg-white rounded-[28px] shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+      <div className={`flex-1 ${colors.basic.bgWhite} rounded-[28px] flex flex-col overflow-hidden`}>
         <ChatArea
           messages={messages}
           sessionId={currentSessionId}

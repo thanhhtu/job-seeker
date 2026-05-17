@@ -1,4 +1,5 @@
 import React from 'react';
+import { colors } from '@/theme/colors';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -16,9 +17,9 @@ const Input: React.FC<InputProps> = ({
   const baseStyles = 'w-full p-[10px]';
   
   const variantStyles = {
-    primary: 'border-gray-300 focus:ring-blue-500 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors',
-    secondary: 'bg-transparent text-slate-600 placeholder:text-slate-400 border-0 border-none focus:ring-0 focus:outline-none',
-    error: 'border-red-500 focus:ring-red-500 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors',
+    primary: `border ${colors.neutral.border200} rounded-md focus:outline-none focus:ring-2 focus:ring-accent transition-colors`,
+    secondary: `${colors.basic.bgTransparent} ${colors.neutral.text600} placeholder:${colors.neutral.text400} border-0 border-none focus:ring-0 focus:outline-none`,
+    error: `border ${colors.status.errorBorder} rounded-md focus:outline-none focus:ring-2 focus:ring-error transition-colors`,
   };
   
   if (!label && !error) {
@@ -32,7 +33,7 @@ const Input: React.FC<InputProps> = ({
   
   return (
     <div className="flex flex-col gap-1.25">
-      {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
+      {label && <label className={`text-[13px] font-medium ${colors.neutral.text700}`}>{label}</label>}
       
       <input
         {...props}
@@ -43,7 +44,7 @@ const Input: React.FC<InputProps> = ({
         }
       />
 
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && <span className={`text-[11px] ${colors.status.error}`}>{error}</span>}
     </div>
   );
 };

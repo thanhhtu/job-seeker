@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useLayoutEffect } from 'react';
+import { colors } from '@/theme/colors';
 
 interface InputProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -66,11 +67,11 @@ const Textarea: React.FC<InputProps> = ({
 
   const variantStyles = {
     primary:
-      'border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors',
+      `border ${colors.neutral.border200} rounded-md focus:outline-none focus:ring-2 focus:ring-accent transition-colors`,
     secondary:
-      'bg-transparent text-slate-600 placeholder:text-slate-400 border-0 border-none focus:ring-0 focus:outline-none',
+      `${colors.basic.bgTransparent} ${colors.neutral.text600} placeholder:${colors.neutral.text400} border-0 border-none focus:ring-0 focus:outline-none`,
     error:
-      'border border-red-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors',
+      `border ${colors.status.errorBorder} rounded-md focus:outline-none focus:ring-2 focus:ring-error transition-colors`,
   };
 
   // Re-adjust whenever value changes (handles controlled component re-renders)
@@ -129,7 +130,7 @@ const Textarea: React.FC<InputProps> = ({
   return (
     <div className="flex flex-col gap-[5px]">
       {label && (
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className={`text-[13px] font-medium ${colors.neutral.text700}`}>{label}</label>
       )}
 
       <textarea
@@ -140,7 +141,7 @@ const Textarea: React.FC<InputProps> = ({
           ${className}`}
       />
 
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && <span className={`text-[11px] ${colors.status.error}`}>{error}</span>}
     </div>
   );
 };

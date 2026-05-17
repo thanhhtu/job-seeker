@@ -1,18 +1,30 @@
+import { useState } from "react";
+import { colors } from "@/theme/colors";
 import { SessionSummary } from "@/types/session";
-import { Button } from "./common";
+import { MessageSquareMore, PencilLine, Trash } from "lucide-react";
+import { Button, Dialog, Input } from "./common";
 
 type Props = {
   sessions: SessionSummary[];
   currentSessionId: string | null;
   loading: boolean;
   hasToken: boolean;
+  sessionTitles: Record<string, string>;
   onRefresh: () => void;
   onSelect: (id: string) => void;
+  onRenameSession: (sessionId: string, title: string) => void;
+  onDeleteSession: (sessionId: string) => void;
 };
 
-function sessionLabel(s: SessionSummary): string {
-  // Thay thế các ID hex thành tên dễ đọc giống trong ảnh nếu không có tiêu đề
-  const fallback = ["Create Chatbot GPT...", "Apply To Leave For Emergency", "What Is UI UX Design?", "Create POS System", "What Is UX Audit?", "Crypto Lending App Name"];
+function defaultLabel(s: SessionSummary): string {
+  const fallback = [
+    "Create Chatbot GPT...",
+    "Create Html Game Environment...",
+    "Apply To Leave For Emergency",
+    "What Is UI UX Design?",
+    "Min States For Binary DFA",
+    "Crypto Lending App Name",
+  ];
   const index = parseInt(s.session_id.slice(-1), 16) % fallback.length;
   return fallback[index];
 }
@@ -23,7 +35,19 @@ function isWithinLast7Days(iso: string): boolean {
   return Date.now() - t < 7 * 24 * 60 * 60 * 1000;
 }
 
-export function SessionList({ sessions, currentSessionId, hasToken, onSelect }: Props) {
+export function SessionList({
+  sessions,
+  currentSessionId,
+  hasToken,
+  sessionTitles,
+  onSelect,
+  onRenameSession,
+  onDeleteSession,
+}: Props) {
+  const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SessionSummary | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
+
   const sorted = [...sessions].sort((a, b) => {
     const ta = new Date(a.last_message_at || a.created_at).getTime();
     const tb = new Date(b.last_message_at || b.created_at).getTime();
@@ -33,63 +57,199 @@ export function SessionList({ sessions, currentSessionId, hasToken, onSelect }: 
   const recent = sorted.filter((s) => isWithinLast7Days(s.last_message_at || s.created_at));
   const older = sorted.filter((s) => !isWithinLast7Days(s.last_message_at || s.created_at));
 
+  const getTitle = (s: SessionSummary) => sessionTitles[s.session_id] ?? defaultLabel(s);
+
+  const openRename = (session: SessionSummary) => {
+    const title = getTitle(session);
+    setDraftTitle(title);
+    setRenameTarget({ id: session.session_id, title });
+  };
+
+  const confirmRename = () => {
+    if (!renameTarget) return;
+    const next = draftTitle.trim();
+    if (!next) return;
+    onRenameSession(renameTarget.id, next);
+    setRenameTarget(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    onDeleteSession(deleteTarget.session_id);
+    setDeleteTarget(null);
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      {!hasToken && <p className="text-xs text-slate-400 text-center py-4">Sign in to save history</p>}
+    <>
+      <div className="flex flex-col gap-1">
+        {!hasToken && (
+          <p className={`text-[12px] ${colors.neutral.text400} text-center py-4`}>
+            Sign in to save history
+          </p>
+        )}
 
-      {recent.length > 0 && (
-        <div className="space-y-1">
-          {recent.map((s) => (
-            <SessionRow
-              key={s.session_id}
-              session={s}
-              active={currentSessionId === s.session_id}
-              onSelect={() => onSelect(s.session_id)}
-            />
-          ))}
-        </div>
-      )}
+        {recent.map((s) => (
+          <SessionRow
+            key={s.session_id}
+            title={getTitle(s)}
+            active={currentSessionId === s.session_id}
+            onSelect={() => onSelect(s.session_id)}
+            onEdit={() => openRename(s)}
+            onDelete={() => setDeleteTarget(s)}
+          />
+        ))}
 
-      {older.length > 0 && (
-        <div className="space-y-1">
-          <p className="font-bold uppercase tracking-[0.15em] text-slate-300 px-3 mb-2">Last 7 Days</p>
-          {older.map((s) => (
-            <SessionRow
-              key={s.session_id}
-              session={s}
-              active={currentSessionId === s.session_id}
-              onSelect={() => onSelect(s.session_id)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+        {older.length > 0 && (
+          <div className="mt-5">
+            <p className={`text-[12px] font-semibold ${colors.neutral.text400} px-2 mb-2`}>
+              Last 7 Days
+            </p>
+            <div className="flex flex-col gap-1">
+              {older.map((s) => (
+                <SessionRow
+                  key={s.session_id}
+                  title={getTitle(s)}
+                  active={currentSessionId === s.session_id}
+                  onSelect={() => onSelect(s.session_id)}
+                  onEdit={() => openRename(s)}
+                  onDelete={() => setDeleteTarget(s)}
+                  faded={currentSessionId !== s.session_id}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Dialog
+        open={renameTarget !== null}
+        onClose={() => setRenameTarget(null)}
+        title="Đổi tên cuộc trò chuyện"
+        footer={
+          <>
+            <Button variant="transparent" className={`!p-2.5 !px-4 ${colors.neutral.text600}`} onClick={() => setRenameTarget(null)}>
+              Hủy
+            </Button>
+            <Button className="!p-2.5 !px-5" onClick={confirmRename} disabled={!draftTitle.trim()}>
+              Lưu
+            </Button>
+          </>
+        }
+      >
+        <Input
+          autoFocus
+          value={draftTitle}
+          onChange={(e) => setDraftTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") confirmRename();
+          }}
+          placeholder="Nhập tên cuộc trò chuyện"
+          className="!rounded-xl"
+        />
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Xóa cuộc trò chuyện?"
+        footer={
+          <>
+            <Button variant="transparent" className={`!p-2.5 !px-4 ${colors.neutral.text600}`} onClick={() => setDeleteTarget(null)}>
+              Hủy
+            </Button>
+            <Button className={`!p-2.5 !px-5 ${colors.status.bgError}`} onClick={confirmDelete}>
+              Xóa
+            </Button>
+          </>
+        }
+      >
+        <p className={`text-[13px] leading-relaxed ${colors.neutral.text600}`}>
+          Bạn có chắc muốn xóa{" "}
+          <span className={`font-semibold ${colors.neutral.text800}`}>
+            {deleteTarget ? getTitle(deleteTarget) : ""}
+          </span>
+          ? Hành động này không thể hoàn tác.
+        </p>
+      </Dialog>
+    </>
   );
 }
 
-function SessionRow({ session, active, onSelect }: { session: SessionSummary; active: boolean; onSelect: () => void }) {
+function SessionRow({
+  title,
+  active,
+  onSelect,
+  onEdit,
+  onDelete,
+  faded = false,
+}: {
+  title: string;
+  active: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  faded?: boolean;
+}) {
+  const iconClass = active
+    ? colors.primary.text
+    : faded
+    ? colors.neutral.text400
+    : colors.neutral.text900;
+
+  const labelClass = active
+    ? `font-semibold ${colors.primary.text}`
+    : faded
+    ? `font-medium ${colors.neutral.text400}`
+    : `font-medium ${colors.neutral.text900}`;
+
   return (
-    <Button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className={`w-full text-left rounded-2xl px-4 py-3 transition-all flex items-center gap-3 group relative !bg-transparent !p-0 !border-0 !shadow-none ${
-        active ? "bg-indigo-50/70 text-indigo-700" : "text-slate-600 hover:bg-slate-50"
-      }`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`relative w-full rounded-full px-6 py-2 min-h-[44px] flex items-center gap-2.5 transition-colors cursor-pointer select-none ${
+        active ? colors.primary.xLightBg : colors.neutral.hoverBg50
+      } ${!active && faded ? "opacity-60" : ""}`}
     >
-      <svg className={`shrink-0 ${active ? "text-indigo-500" : "text-slate-300"}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span className={`flex-1 truncate font-bold ${active ? "text-indigo-800" : "text-slate-700"}`}>
-        {sessionLabel(session)}
+      <MessageSquareMore className={`w-5 h-5 shrink-0 ${iconClass}`} />
+
+      <span className={`flex-1 min-w-0 truncate text-[13px] leading-none ${labelClass}`}>
+        {title}
       </span>
 
       {active && (
-        <div className="flex items-center gap-1">
-          <button className="p-1 hover:bg-white rounded-md text-slate-400 hover:text-red-500 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
-          <button className="p-1 hover:bg-white rounded-md text-slate-400 hover:text-indigo-600 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-          <span className="w-2 h-2 rounded-full bg-indigo-500 ml-1 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+        <div className={`absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-2.5 py-3 px-4 rounded-3xl ${colors.primary.lightBg}`}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            aria-label="Rename session"
+            className={`p-0.5 rounded-full transition-colors cursor-pointer ${colors.action.icon} ${colors.action.hoverEdit}`}
+          >
+            <PencilLine className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            aria-label="Delete session"
+            className={`p-0.5 rounded-full transition-colors cursor-pointer ${colors.action.icon} ${colors.action.hoverDelete}`}
+          >
+            <Trash className="w-4 h-4" />
+          </button>
         </div>
       )}
-    </Button>
+    </div>
   );
 }
