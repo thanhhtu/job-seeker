@@ -1,17 +1,16 @@
 import { FormEvent, useState } from "react";
 import { toast } from "react-hot-toast";
-import { ApiError, login, register } from "@/api";
-import { UserInfo } from "@/types/user";
-import { STORAGE_KEYS } from "@/constant/storage";
+import { ApiError, AuthResponse, login, register } from "@/api";
 import { Button, Input } from "./common";
 import { colors } from "@/theme/colors";
+import { AuthMode } from "@/types/user";
 
 type Props = {
-  onLogin: (token: string, user: UserInfo) => void;
+  onLogin: (data: AuthResponse) => void;
 };
 
 export function AuthForm({ onLogin }: Props) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<AuthMode>(AuthMode.LOGIN);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,12 +19,11 @@ export function AuthForm({ onLogin }: Props) {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = mode === "login"
-        ? await login(email, password)
-        : await register(email, password);
-      localStorage.setItem(STORAGE_KEYS.token, data.access_token);
-      localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(data.user));
-      onLogin(data.access_token, data.user);
+      const data =
+        mode === "login"
+          ? await login(email, password)
+          : await register(email, password);
+      onLogin(data);
     } catch (err) {
       if (err instanceof ApiError) toast.error(err.message);
     } finally {
@@ -36,16 +34,15 @@ export function AuthForm({ onLogin }: Props) {
   return (
     <div className={`${colors.neutral.bg50}/80 rounded-[28px] p-5 border ${colors.neutral.border100} flex flex-col gap-4`}>
       <div>
-        <h2 className={`font-black ${colors.neutral.text900} leading-tight`}>Welcome Back</h2>
-        <p className={`font-bold ${colors.neutral.text400} uppercase tracking-widest mt-1`}>
-          Sign in to your AI workspace
-        </p>
+        <h2 className={`font-semibold ${colors.neutral.text900} text-[13px] leading-tight pb-1 uppercase`}>
+          {mode === AuthMode.LOGIN ? "Đăng nhập" : "Đăng ký"}
+        </h2>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Input
           type="email"
-          placeholder="Email address"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -53,7 +50,7 @@ export function AuthForm({ onLogin }: Props) {
         />
         <Input
           type="password"
-          placeholder="Password"
+          placeholder="Mật khẩu"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -63,20 +60,22 @@ export function AuthForm({ onLogin }: Props) {
         <Button
           type="submit"
           disabled={loading}
-          className={`w-full font-bold py-3.5 rounded-xl shadow-lg shadow-primary-light active:scale-95 mt-1`}
+          className={`w-full font-semibold py-3.5 rounded-xl shadow-lg shadow-primary-light active:scale-95 mt-1`}
         >
-          {loading ? "…" : mode === "login" ? "Sign In" : "Register"}
+          {loading ? "…" : mode === AuthMode.LOGIN ? "Đăng nhập" : "Đăng ký"}
         </Button>
       </form>
 
-      <Button
-        type="button"
-        onClick={() => setMode((m) => (m === "login" ? "register" : "login"))}
-        variant="secondary"
-        className={`font-bold ${colors.primary.text} ${colors.primary.xLightBg} hover:${colors.primary.lightBg} rounded-xl`}
-      >
-        {mode === "login" ? "New here? Create an account" : "Already have an account? Login"}
-      </Button>
+      <div className="text-center pt-2">
+        <button
+          type="button"
+          onClick={() => setMode((m) => (m === AuthMode.LOGIN ? AuthMode.REGISTER : AuthMode.LOGIN))}
+          className={`font-semibold ${colors.neutral.text900} hover:${colors.primary.text} p-0 cursor-pointer`}
+        >
+          {mode === AuthMode.LOGIN ? "Bạn mới ở đây? Tạo tài khoản" : "Bạn đã có tài khoản? Đăng nhập"}
+        </button>
+      </div>
+      
     </div>
   );
 }

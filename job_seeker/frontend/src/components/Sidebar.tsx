@@ -4,6 +4,7 @@ import { AuthForm } from "./AuthForm";
 import { SessionList } from "./SessionList";
 import { LogOut, Plus, Search, Settings } from "lucide-react";
 import { Button } from "./common";
+import { AuthResponse } from "@/api";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   currentSessionId: string | null;
   loadingSessions: boolean;
   sessionTitles: Record<string, string>;
-  onLogin: (token: string, user: UserInfo) => void;
+  onLogin: (data: AuthResponse) => void;
   onLogout: () => void;
   onRefreshSessions: () => void;
   onSelectSession: (id: string) => void;
@@ -57,17 +58,29 @@ export function Sidebar({
           </Button>
         </div>
 
-        <div className={`flex items-center justify-between px-1 border-y ${colors.neutral.border200} py-6 text-[13px]`}>
-          <span className={`mx-10 font-semibold ${colors.neutral.text400} tracking-wide`}>
-            Lịch sử trò chuyện
-          </span>
-          <Button
-            onClick={onRefreshSessions}
-            variant="transparent"
-            className={`mx-10 font-semibold !p-0 ${colors.primary.text} hover:opacity-80`}
-          >
-            Xóa tất cả
-          </Button>
+        <div
+          className={`flex items-center px-1 border-y ${colors.neutral.border200} py-6 text-[13px] ${
+            token ? "justify-between" : ""
+          }`}
+        >
+          {token ? (
+            <>
+              <span className={`mx-10 font-semibold ${colors.neutral.text400} tracking-wide`}>
+                Lịch sử trò chuyện
+              </span>
+              <Button
+                onClick={onRefreshSessions}
+                variant="transparent"
+                className={`mx-10 font-semibold !p-0 ${colors.primary.text} hover:opacity-80`}
+              >
+                Xóa tất cả
+              </Button>
+            </>
+          ) : (
+            <span className={`mx-10 font-semibold ${colors.neutral.text400} tracking-wide`}>
+              Đăng nhập để lưu lịch sử trò chuyện
+            </span>
+          )}
         </div>
       </div>
 
@@ -79,7 +92,6 @@ export function Sidebar({
             sessions={sessions}
             currentSessionId={currentSessionId}
             loading={loadingSessions}
-            hasToken={!!token}
             sessionTitles={sessionTitles}
             onRefresh={onRefreshSessions}
             onSelect={onSelectSession}
@@ -95,13 +107,13 @@ export function Sidebar({
           className={`w-full flex items-center gap-3 rounded-full px-4 py-3 font-semibold text-[13px] ${colors.neutral.text800} ${colors.neutral.hoverBg50} transition-colors cursor-pointer`}
         >
           <Settings className="w-5 h-5" />
-          Settings
+          Cài đặt
         </button>
 
         {token && user && (
           <div className={`flex items-center gap-3 rounded-full px-3 py-2.5 ${colors.neutral.hoverBg50}`}>
             <div
-              className={`w-9 h-9 rounded-full ${colors.primary.lightBg} flex items-center justify-center ${colors.primary.text} font-bold text-[14px] shrink-0`}
+              className={`w-9 h-9 rounded-full ${colors.primary.lightBg} flex items-center justify-center ${colors.primary.text} font-bold text-[15px] shrink-0`}
             >
               {user.email[0].toUpperCase()}
             </div>
@@ -111,8 +123,9 @@ export function Sidebar({
             <button
               type="button"
               onClick={onLogout}
-              aria-label="Log out"
-              className={`p-1.5 rounded-full ${colors.neutral.text400} hover:${colors.status.error} transition-colors cursor-pointer`}
+              aria-label="Đăng xuất"
+              title="Đăng xuất"
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${colors.action.icon} ${colors.action.hoverDelete}`}
             >
               <LogOut className="w-4 h-4" />
             </button>

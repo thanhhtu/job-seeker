@@ -2,12 +2,11 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { ChatArea } from "@/components/ChatArea";
 import { Sidebar } from "@/components/Sidebar";
-import { ApiError, getSessionMessages, listSessions, sendMessage } from "@/api";
+import { ApiError, AuthResponse, getSessionMessages, listSessions, sendMessage } from "@/api";
+import { useAuth } from "@/hooks/useAuth";
 import { ChatMessage } from "@/types/chat";
 import { SessionSummary } from "@/types/session";
-import { UserInfo } from "@/types/user";
 import { getGuestId } from "@/utils/ids";
-import { STORAGE_KEYS } from "@/constant/storage";
 import { colors } from "@/theme/colors";
 import {
   loadHiddenSessionIds,
@@ -17,8 +16,8 @@ import {
 } from "@/utils/sessionPrefs";
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const { accessToken, user, isBootstrapping, login, logout } = useAuth();
+
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -33,33 +32,29 @@ export default function App() {
     [sessions, hiddenSessionIds]
   );
 
-  useEffect(() => {
-    const t = localStorage.getItem(STORAGE_KEYS.token);
-    const raw = localStorage.getItem(STORAGE_KEYS.user);
-    if (!t || !raw) return;
-    try {
-      setToken(t);
-      setUser(JSON.parse(raw) as UserInfo);
-    } catch {
-      localStorage.removeItem(STORAGE_KEYS.token);
-      localStorage.removeItem(STORAGE_KEYS.user);
-    }
-  }, []);
-
   const fetchSessions = useCallback(async () => {
-    if (!token) { setSessions([]); return; }
+    if (!accessToken) {
+      setSessions([]);
+      return;
+    }
     setLoadingSessions(true);
     try {
-      const data = await listSessions(token);
+      const data = await listSessions();
       setSessions(data);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+        return;
+      }
       if (err instanceof ApiError) toast.error(err.message);
     } finally {
       setLoadingSessions(false);
     }
-  }, [token]);
+  }, [accessToken, logout]);
 
-  useEffect(() => { void fetchSessions(); }, [fetchSessions]);
+  useEffect(() => {
+    if (!isBootstrapping) void fetchSessions();
+  }, [fetchSessions, isBootstrapping]);
 
   const handleRenameSession = (sessionId: string, title: string) => {
     persistSessionTitle(sessionId, title);
@@ -76,12 +71,16 @@ export default function App() {
   };
 
   const handleSelectSession = async (id: string) => {
-    if (!token) return;
+    if (!accessToken) return;
     setCurrentSessionId(id);
     try {
-      const msgs = await getSessionMessages(id, token);
+      const msgs = await getSessionMessages(id);
       setMessages(msgs);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+        return;
+      }
       if (err instanceof ApiError) toast.error(err.message);
     }
   };
@@ -101,8 +100,7 @@ export default function App() {
       const data = await sendMessage({
         message: text,
         sessionId: currentSessionId,
-        token,
-        guestId: token ? undefined : getGuestId(),
+        ...(accessToken ? {} : { token: null, guestId: getGuestId() }),
       });
       setCurrentSessionId(data.session_id);
       setMessages((prev) => [
@@ -110,15 +108,41 @@ export default function App() {
         optimistic,
         { role: "assistant", content: data.assistant_message },
       ]);
-      if (token) void fetchSessions();
+      if (accessToken) void fetchSessions();
     } catch (err) {
       setMessages((prev) => prev.slice(0, -1));
       setInput(text);
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+        return;
+      }
       if (err instanceof ApiError) toast.error(err.message);
     } finally {
       setIsSending(false);
     }
   };
+
+  const handleLogin = (data: AuthResponse) => {
+    setCurrentSessionId(null);
+    setMessages([]);
+    setInput("");
+    login(data);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setSessions([]);
+    setCurrentSessionId(null);
+    setMessages([]);
+  };
+
+  if (isBootstrapping) {
+    return (
+      <div className={`flex h-screen w-full items-center justify-center ${colors.page.shellBg}`}>
+        <p className={colors.neutral.text500}>Đang tải…</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex h-screen w-full ${colors.page.shellBg} !p-4 md:p-4 gap-4 overflow-hidden font-sans`}>
@@ -135,35 +159,26 @@ export default function App() {
           },
         }}
       />
-      <div 
+      <div
         className={`w-[320px] shrink-0 ${colors.basic.bgWhite} rounded-[28px] border ${colors.neutral.border100} flex flex-col overflow-y-hidden overflow-x-visible`}
         style={{ boxShadow: "rgba(0, 0, 0, 0.09) 0px 3px 12px" }}
       >
         <Sidebar
-          token={token}
+          token={accessToken}
           user={user}
           sessions={visibleSessions}
           currentSessionId={currentSessionId}
           loadingSessions={loadingSessions}
           sessionTitles={sessionTitles}
-          onLogin={(t, u) => { 
-            setToken(t); 
-            setUser(u); 
-          }}
-          onLogout={() => { 
-            setToken(null); 
-            setUser(null); 
-            setSessions([]); 
-            setCurrentSessionId(null); 
-            setMessages([]); 
-          }}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
           onRefreshSessions={() => void fetchSessions()}
           onSelectSession={(id) => void handleSelectSession(id)}
           onRenameSession={handleRenameSession}
           onDeleteSession={handleDeleteSession}
-          onNewChat={() => { 
-            setCurrentSessionId(null); 
-            setMessages([]); 
+          onNewChat={() => {
+            setCurrentSessionId(null);
+            setMessages([]);
           }}
         />
       </div>

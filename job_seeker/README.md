@@ -10,7 +10,7 @@ An agent for job search and Q&A, built with **LangGraph**, **Mistral AI**, **Oll
 - [Workflow](#workflow)
 - [Hybrid Search](#hybrid-search)
 - [Setup & Run](#setup--run)
-- [REST API, Swagger & Auth](#rest-api-swagger-auth)
+- [REST API](#rest-api)
 - [Web Chatbot](#web-chatbot)
 - [Docker](#docker)
 - [Database Migration](#database-migration)
@@ -184,15 +184,7 @@ Open LangGraph Studio at `http://localhost:2024`.
 
 ---
 
-## REST API, Swagger & Auth
-
-### `users` table and chat data
-
-| Table | Description |
-|-------|-------------|
-| **`users`** | Registered accounts: `id` (UUID as text), unique `email`, `password_hash`, `created_at`. |
-| **`chat_sessions`** | Chat threads; `user_id` is either a registered user id or an opaque guest id (text). |
-| **`chat_messages`** | Messages keyed by `session_id`. |
+## REST API
 
 ### Run the API (FastAPI)
 
@@ -210,29 +202,6 @@ The examples below assume the API base URL is **`http://localhost:8080`**. Chang
 | **ReDoc** | <http://localhost:8080/redoc> |
 | **OpenAPI JSON** — Postman import, codegen, etc. | <http://localhost:8080/openapi.json> |
 | **Root `/`** | Redirects to **`/docs`** (307) |
-
-**Using Swagger with auth**
-
-1. Open **<http://localhost:8080/docs>**.
-2. Call **`POST /api/auth/register`** or **`POST /api/auth/login`** and copy `access_token` from the response.
-3. Click **Authorize** (lock icon), choose **HTTPBearer**, paste **only** the token (Swagger adds the `Bearer ` prefix).
-4. Call protected routes (e.g. **`GET /api/auth/me`**, **`GET /api/me/chat-sessions`**, **`GET /api/sessions/{session_id}/messages`**).
-
-Swagger is configured with **persistAuthorization** so the token survives a page refresh while you stay on `/docs`.
-
-### Main endpoints (summary)
-
-| Method | Path | Notes |
-|--------|------|--------|
-| `POST` | `/api/auth/register` | Sign up; returns JWT + `user` |
-| `POST` | `/api/auth/login` | Sign in; returns JWT |
-| `GET` | `/api/auth/me` | Requires `Authorization: Bearer <JWT>` |
-| `GET` | `/api/me/chat-sessions` | List chat sessions for the authenticated user |
-| `POST` | `/api/chat` | Chat; with JWT, messages attach to that user (body `user_id` ignored); without JWT, uses body `user_id` (guest) |
-| `GET` | `/api/sessions/{session_id}/messages` | Message history; **requires** JWT and session ownership |
-| `GET` | `/health` | Health check |
-
-JWT settings: `JWT_SECRET` and token lifetime (`jwt_expire_minutes`, etc.) in [`src/core/config.py`](src/core/config.py) (pydantic-settings reads matching env vars where applicable).
 
 ---
 

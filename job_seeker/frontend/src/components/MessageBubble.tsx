@@ -1,7 +1,20 @@
 import { ChatMessage } from "@/types/chat";
-import { Copy, Check } from "lucide-react";
+import { Check, Copy, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { colors } from "@/theme/colors";
+
+function renderInlineBold(line: string) {
+  const parts = line.split(/\*\*(.+?)\*\*/g);
+  return parts.map((part, idx) =>
+    idx % 2 === 1 ? (
+      <span key={idx} className="font-semibold">
+        {part}
+      </span>
+    ) : (
+      part
+    )
+  );
+}
 
 function parseMarkdown(text: string) {
   const lines = text.split("\n");
@@ -11,18 +24,15 @@ function parseMarkdown(text: string) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Numbered list: "1. **Bold:** rest"
     const numberedBold = line.match(/^(\d+)\.\s+\*\*(.+?)\*\*[:\s]*(.*)/);
     if (numberedBold) {
       const [, num, bold, rest] = numberedBold;
       elements.push(
-        <div key={i} className="flex gap-3 py-1.5">
-          <span className={`shrink-0 w-6 h-6 rounded-full ${colors.primary.xLightBg} ${colors.primary.text} font-semibold flex items-center justify-center mt-0.5`}>
-            {num}
-          </span>
-          <p className={`leading-relaxed ${colors.neutral.text700}`}>
-            <span className={`font-semibold ${colors.neutral.text800}`}>{bold}:</span>{" "}
-            {rest}
+        <div key={i} className="flex gap-2 py-1">
+          <span className={`shrink-0 font-medium ${colors.neutral.text600}`}>{num}.</span>
+          <p className={`leading-relaxed ${colors.neutral.text800}`}>
+            <span className="font-semibold">{bold}:</span>
+            {rest ? ` ${rest}` : ""}
           </p>
         </div>
       );
@@ -30,52 +40,48 @@ function parseMarkdown(text: string) {
       continue;
     }
 
-    // Plain numbered list: "1. text"
     const plainNumbered = line.match(/^(\d+)\.\s+(.*)/);
     if (plainNumbered) {
       const [, num, rest] = plainNumbered;
       elements.push(
-        <div key={i} className="flex gap-3 py-1.5">
-          <span className={`shrink-0 w-6 h-6 rounded-full ${colors.primary.xLightBg} ${colors.primary.text} font-semibold flex items-center justify-center mt-0.5`}>
-            {num}
-          </span>
-          <p className={`leading-relaxed ${colors.neutral.text700}`}>{rest}</p>
+        <div key={i} className="flex gap-2 py-1">
+          <span className={`shrink-0 font-medium ${colors.neutral.text600}`}>{num}.</span>
+          <p className={`leading-relaxed ${colors.neutral.text800}`}>{rest}</p>
         </div>
       );
       i++;
       continue;
     }
 
-    // Inline bold **text**
-    if (line.includes("**")) {
-      const parts = line.split(/\*\*(.+?)\*\*/g);
+    if (line.match(/^[-*•]\s+/)) {
+      const rest = line.replace(/^[-*•]\s+/, "");
       elements.push(
-        <p key={i} className={`leading-relaxed ${colors.neutral.text700} py-0.5`}>
-          {parts.map((part, idx) =>
-            idx % 2 === 1 ? (
-              <span key={idx} className={`font-semibold ${colors.neutral.text800}`}>
-                {part}
-              </span>
-            ) : (
-              part
-            )
-          )}
+        <li key={i} className={`leading-relaxed ${colors.neutral.text800} ml-5 list-disc`}>
+          {renderInlineBold(rest)}
+        </li>
+      );
+      i++;
+      continue;
+    }
+
+    if (line.includes("**")) {
+      elements.push(
+        <p key={i} className={`leading-relaxed ${colors.neutral.text800} py-0.5`}>
+          {renderInlineBold(line)}
         </p>
       );
       i++;
       continue;
     }
 
-    // Empty line
     if (line.trim() === "") {
-      elements.push(<div key={i} className="h-2" />);
+      elements.push(<div key={i} className="h-1" />);
       i++;
       continue;
     }
 
-    // Normal text
     elements.push(
-      <p key={i} className={`leading-relaxed ${colors.neutral.text700} py-0.5`}>
+      <p key={i} className={`leading-relaxed ${colors.neutral.text800} py-0.5`}>
         {line}
       </p>
     );
@@ -85,94 +91,69 @@ function parseMarkdown(text: string) {
   return elements;
 }
 
-export function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === "user";
+function useCopy(content: string) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
+    navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (isUser) {
-    return (
-      <div className={`group flex items-start gap-3 py-5 border-b ${colors.neutral.border100}/70`}>
-        {/* User avatar */}
-        <div className={`shrink-0 w-8 h-8 rounded-full ${colors.neutral.bg100} flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]`}>
-          <svg className={`w-4 h-4 ${colors.neutral.text500}`} fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-          </svg>
-        </div>
+  return { copied, handleCopy };
+}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <p className={`leading-relaxed ${colors.neutral.text800} font-medium`}>
-            {message.content}
-          </p>
-        </div>
+function CopyButton({ copied, onCopy }: { copied: boolean; onCopy: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onCopy}
+      className={`p-1 mt-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${colors.neutral.hoverBg50}`}
+      title="Sao chép"
+    >
+      {copied ? (
+        <Check className={`w-5 h-5 ${colors.status.success}`} />
+      ) : (
+        <Copy className={`w-5 h-5 ${colors.neutral.text400}`} />
+      )}
+    </button>
+  );
+}
 
-        {/* Copy icon — visible on hover */}
-        <button
-          onClick={handleCopy}
-          className={`shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:${colors.neutral.bg100}`}
-          title="Copy"
-        >
-          {copied ? (
-            <Check className={`w-4 h-4 ${colors.status.success}`} />
-          ) : (
-            <Copy className={`w-4 h-4 ${colors.neutral.text400}`} />
-          )}
-        </button>
-      </div>
-    );
-  }
+function UserMessage({ content }: { content: string }) {
+  const { copied, handleCopy } = useCopy(content);
 
   return (
-    <div className={`group flex items-start gap-3 py-5 border-b ${colors.neutral.border100}/70`}>
-      {/* AI avatar */}
-      <div className={`shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary-light to-primary-xlight flex items-center justify-center shadow-[0_1px_4px_rgba(93,95,239,0.15)]`}>
-        <svg className={`w-4 h-4 ${colors.primary.text}`} viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 3C8.5 3 6 5.5 6 8c0 1.8 1 3.4 2.5 4.3V14l2-1.2c.5.1 1 .2 1.5.2s1-.1 1.5-.2L15 14v-1.7C16.5 11.4 18 9.8 18 8c0-2.5-2.5-5-6-5zm0 9c-.4 0-.7 0-1-.1l-.5.3-.5-.3c-.3.1-.7.1-1 .1C7 12 5 10.2 5 8c0-2.8 3-6 7-6s7 3.2 7 6c0 2.2-2 4-4 4z" />
-        </svg>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-3">
-          <span className={`font-bold ${colors.primary.textMuted} tracking-wider uppercase`}>
-            Chat Job Seeker
-          </span>
-          <span className={colors.neutral.text300}>·</span>
-          <svg
-            className={`w-3.5 h-3.5 ${colors.neutral.text400}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="12" cy="12" r="10" strokeWidth="2" />
-            <path d="M12 8v4M12 16h.01" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+    <div className="group flex justify-end w-full">
+      <div className="flex flex-col items-end gap-1 max-w-[min(85%,42rem)]">
+        <div
+          className={`rounded-[20px] px-4 py-2.5 ${colors.primary.xLightBg} ${colors.neutral.text800} text-[15px] leading-relaxed`}
+        >
+          {content}
         </div>
-
-        {/* Parsed message */}
-        <div className="space-y-0.5">{parseMarkdown(message.content)}</div>
-
-        {/* Action row */}
-        <div className="flex items-center gap-1 mt-4">
-          <button
-            onClick={handleCopy}
-            className={`p-1.5 rounded-md hover:${colors.neutral.bg100} transition-colors`}
-            title="Copy"
-          >
-            {copied ? (
-              <Check className={`w-4 h-4 ${colors.status.success}`} />
-            ) : (
-              <Copy className={`w-4 h-4 ${colors.neutral.text400}`} />
-            )}
-          </button>
-        </div>
+        <CopyButton copied={copied} onCopy={handleCopy} />
       </div>
     </div>
   );
+}
+
+function AssistantMessage({ content }: { content: string }) {
+  const { copied, handleCopy } = useCopy(content);
+
+  return (
+    <div className="group flex gap-3 w-full">
+      <Sparkles className={`w-6 h-6 shrink-0 mt-1 ${colors.primary.text}`} strokeWidth={2} />
+      <div className="flex-1 min-w-0">
+        <div className="space-y-0.5 text-[15px]">{parseMarkdown(content)}</div>
+        <CopyButton copied={copied} onCopy={handleCopy} />
+      </div>
+    </div>
+  );
+}
+
+export function MessageBubble({ message }: { message: ChatMessage }) {
+  if (message.role === "user") {
+    return <UserMessage content={message.content} />;
+  }
+  return <AssistantMessage content={message.content} />;
 }

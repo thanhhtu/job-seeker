@@ -1,4 +1,4 @@
-export { login, register } from "./auth";
+export { login, register, refreshTokens } from "./auth";
 export type { AuthResponse } from "./auth";
 
 export { listSessions, getSessionMessages } from "./sessions";

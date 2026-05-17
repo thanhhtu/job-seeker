@@ -8,7 +8,6 @@ type Props = {
   sessions: SessionSummary[];
   currentSessionId: string | null;
   loading: boolean;
-  hasToken: boolean;
   sessionTitles: Record<string, string>;
   onRefresh: () => void;
   onSelect: (id: string) => void;
@@ -38,7 +37,6 @@ function isWithinLast7Days(iso: string): boolean {
 export function SessionList({
   sessions,
   currentSessionId,
-  hasToken,
   sessionTitles,
   onSelect,
   onRenameSession,
@@ -82,12 +80,6 @@ export function SessionList({
   return (
     <>
       <div className="flex flex-col gap-1">
-        {!hasToken && (
-          <p className={`text-[12px] ${colors.neutral.text400} text-center py-4`}>
-            Sign in to save history
-          </p>
-        )}
-
         {recent.map((s) => (
           <SessionRow
             key={s.session_id}
@@ -101,7 +93,7 @@ export function SessionList({
 
         {older.length > 0 && (
           <div className="mt-5">
-            <p className={`text-[12px] font-semibold ${colors.neutral.text400} px-2 mb-2`}>
+            <p className={`text-[13px] font-semibold ${colors.neutral.text400} px-2 mb-2`}>
               Last 7 Days
             </p>
             <div className="flex flex-col gap-1">

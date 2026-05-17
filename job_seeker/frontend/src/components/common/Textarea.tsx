@@ -141,7 +141,7 @@ const Textarea: React.FC<InputProps> = ({
           ${className}`}
       />
 
-      {error && <span className={`text-[11px] ${colors.status.error}`}>{error}</span>}
+      {error && <span className={`${colors.status.error}`}>{error}</span>}
     </div>
   );
 };

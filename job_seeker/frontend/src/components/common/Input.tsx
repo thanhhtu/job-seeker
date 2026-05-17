@@ -44,7 +44,7 @@ const Input: React.FC<InputProps> = ({
         }
       />
 
-      {error && <span className={`text-[11px] ${colors.status.error}`}>{error}</span>}
+      {error && <span className={`${colors.status.error}`}>{error}</span>}
     </div>
   );
 };
