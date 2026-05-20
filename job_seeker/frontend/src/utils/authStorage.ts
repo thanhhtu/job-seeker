@@ -24,7 +24,9 @@ export function loadAuthStorage(): StoredAuth | null {
   const refreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
   const rawUser = localStorage.getItem(STORAGE_KEYS.user);
 
-  if (!accessToken && !refreshToken && !rawUser) return null;
+  if (!accessToken && !refreshToken && !rawUser) {
+    return null;
+  }
 
   if (!rawUser) {
     clearAuthStorage();

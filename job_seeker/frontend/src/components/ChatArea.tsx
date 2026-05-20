@@ -50,14 +50,20 @@ export function ChatArea({ messages, input, isSending, onInputChange, onSend }: 
     e.preventDefault();
     const textarea = formRef.current?.querySelector("textarea");
     const text = (textarea?.value ?? input).trim();
-    if (!text || isSending) return;
+    if (!text || isSending) {
+      return;
+    }
     onSend(text);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) {
+      return;
+    }
     const text = e.currentTarget.value.trim();
-    if (!text || isSending) return;
+    if (!text || isSending) {
+      return;
+    }
     formRef.current?.requestSubmit();
   };
 

@@ -6,14 +6,16 @@ setup_langsmith_tracing()
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
 
 from src.agent.graph import build_graph
 from src.api.auth.router import router as auth_router
+from src.api.errors import parse_validation_errors
 from src.api.chat.router import router as chat_router
 from src.api.openapi_meta import APP_DESCRIPTION, OPENAPI_TAGS
 from src.api.sessions.router import me_router, router as sessions_router
@@ -64,6 +66,14 @@ app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(sessions_router)
 app.include_router(me_router)
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    _request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    body = parse_validation_errors(exc.errors())
+    return JSONResponse(status_code=422, content={"detail": body.model_dump()})
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

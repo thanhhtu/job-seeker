@@ -25,7 +25,9 @@ export function AuthForm({ onLogin }: Props) {
           : await register(email, password);
       onLogin(data);
     } catch (err) {
-      if (err instanceof ApiError) toast.error(err.message);
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      }
     } finally {
       setLoading(false);
     }

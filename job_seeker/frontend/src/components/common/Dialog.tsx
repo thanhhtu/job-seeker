@@ -13,9 +13,13 @@ type DialogProps = {
 
 export function Dialog({ open, onClose, title, children, footer }: DialogProps) {
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     const prev = document.body.style.overflow;
@@ -26,7 +30,9 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
   return createPortal(
     <div

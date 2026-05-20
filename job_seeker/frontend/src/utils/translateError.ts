@@ -1,54 +1,41 @@
-const EXACT_MESSAGES: Record<string, string> = {
-  "Email already registered.": "Email này đã được đăng ký.",
-  "Incorrect email or password.": "Email hoặc mật khẩu không chính xác.",
-  "Refresh token expired": "Token làm mới đã hết hạn.",
-  "Invalid refresh token": "Token làm mới không hợp lệ.",
-  "User no longer exists": "Tài khoản không còn tồn tại.",
-  "Not authenticated": "Chưa đăng nhập.",
-  "Token expired": "Token đã hết hạn.",
-  "Invalid token": "Token không hợp lệ.",
-  "Invalid token subject": "Token không hợp lệ.",
-  "Message must not be empty.": "Tin nhắn không được để trống.",
-  "Session does not belong to user.": "Phiên chat không thuộc về người dùng này.",
-  "Session not found.": "Không tìm thấy phiên chat.",
-  "You do not have access to this session.": "Bạn không có quyền truy cập phiên chat này.",
-};
+import type { ApiErrorPayload } from "@/types/apiError";
 
-const PARTIAL_MESSAGES: Array<{ match: RegExp; vi: string }> = [
-  { match: /at least 8 character/i, vi: "Mật khẩu phải có ít nhất 8 ký tự." },
-  { match: /valid email/i, vi: "Email không hợp lệ." },
-  { match: /field required/i, vi: "Vui lòng điền đầy đủ thông tin." },
-];
+const MESSAGES_BY_CODE: Record<string, string> = {
+  EMAIL_ALREADY_REGISTERED: "Email này đã được đăng ký",
+  INVALID_CREDENTIALS: "Email hoặc mật khẩu không chính xác",
+  REFRESH_TOKEN_EXPIRED: "Token làm mới đã hết hạn",
+  INVALID_REFRESH_TOKEN: "Token làm mới không hợp lệ",
+  USER_NOT_FOUND: "Tài khoản không còn tồn tại",
+  NOT_AUTHENTICATED: "Chưa đăng nhập",
+  TOKEN_EXPIRED: "Token đã hết hạn",
+  INVALID_TOKEN: "Token không hợp lệ",
+  INVALID_TOKEN_SUBJECT: "Token không hợp lệ",
+  MESSAGE_EMPTY: "Tin nhắn không được để trống.",
+  SESSION_FORBIDDEN: "Phiên chat không thuộc về người dùng này",
+  SESSION_NOT_FOUND: "Không tìm thấy phiên chat",
+  SESSION_ACCESS_DENIED: "Bạn không có quyền truy cập phiên chat này",
+  TITLE_EMPTY: "Tiêu đề không được để trống",
+  INVALID_EMAIL: "Email không hợp lệ",
+  PASSWORD_TOO_SHORT: "Mật khẩu phải có ít nhất 8 ký tự",
+  FIELD_REQUIRED: "Vui lòng điền đầy đủ thông tin",
+  VALIDATION_ERROR: "Dữ liệu không hợp lệ",
+  UNKNOWN_ERROR: "Đã xảy ra lỗi. Vui lòng thử lại",
+};
 
 const VIETNAMESE_RE =
   /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
 
-function translatePart(message: string): string {
-  const trimmed = message.trim();
-  if (!trimmed) return trimmed;
-
-  const exact = EXACT_MESSAGES[trimmed];
-  if (exact) return exact;
-
-  const httpMatch = /^HTTP (\d+)$/.exec(trimmed);
-  if (httpMatch) return `Đã xảy ra lỗi (mã ${httpMatch[1]}).`;
-
-  for (const { match, vi } of PARTIAL_MESSAGES) {
-    if (match.test(trimmed)) return vi;
+/** Map API error payload to Vietnamese for toasts (by message_code). */
+export function translateApiError(payload: ApiErrorPayload): string {
+  const byCode = MESSAGES_BY_CODE[payload.message_code];
+  if (byCode) {
+    return byCode;
   }
 
-  if (VIETNAMESE_RE.test(trimmed)) return trimmed;
-
-  return "Đã xảy ra lỗi. Vui lòng thử lại.";
-}
-
-/** Map known English API / validation messages to Vietnamese for toasts. */
-export function translateApiMessage(message: string): string {
-  if (message.includes("; ")) {
-    return message
-      .split("; ")
-      .map((part) => translatePart(part))
-      .join("; ");
+  const detail = payload.message.trim();
+  if (detail && VIETNAMESE_RE.test(detail)) {
+    return detail;
   }
-  return translatePart(message);
+
+  return MESSAGES_BY_CODE.UNKNOWN_ERROR;
 }

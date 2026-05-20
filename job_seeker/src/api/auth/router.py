@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncpg
 import jwt as pyjwt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from src.api.auth.deps import get_current_user
+from src.api.errors import ErrorCode, api_error
 from src.api.auth.jwt_tokens import (
     create_access_token,
     create_refresh_token,
@@ -29,7 +30,6 @@ def _token_bundle(user: UserRecord) -> TokenResponse:
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer",
         expires_in=expires_in,
         user=UserPublic(id=user.id, email=user.email),
     )
@@ -47,9 +47,9 @@ async def register(payload: UserRegister) -> TokenResponse:
     try:
         user = await create_user(email=email, password_hash=pwd_hash)
     except asyncpg.UniqueViolationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered.",
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            ErrorCode.EMAIL_ALREADY_REGISTERED,
         ) from exc
     return _token_bundle(user)
 
@@ -64,15 +64,15 @@ async def login(payload: UserLogin) -> TokenResponse:
     email = payload.email.strip().lower()
     row = await get_user_by_email(email)
     if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password.",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.INVALID_CREDENTIALS,
         )
     user, stored_hash = row
     if not verify_password(payload.password, stored_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password.",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.INVALID_CREDENTIALS,
         )
     return _token_bundle(user)
 
@@ -87,28 +87,28 @@ async def refresh_tokens(payload: RefreshRequest) -> TokenResponse:
     try:
         claims = decode_refresh_token(payload.refresh_token.strip())
     except pyjwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token expired",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.REFRESH_TOKEN_EXPIRED,
         ) from None
     except pyjwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.INVALID_REFRESH_TOKEN,
         ) from None
 
     sub = claims.get("sub")
     if not isinstance(sub, str) or not sub:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.INVALID_REFRESH_TOKEN,
         )
 
     user = await get_user_by_id(sub)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User no longer exists",
+        raise api_error(
+            status.HTTP_401_UNAUTHORIZED,
+            ErrorCode.USER_NOT_FOUND,
         )
 
     return _token_bundle(user)

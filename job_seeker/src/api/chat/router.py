@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from langchain_core.messages import HumanMessage
 
 from src.api.auth.deps import optional_current_user
+from src.api.errors import ErrorCode, api_error
 from src.api.chat.schemas import ChatRequest, ChatResponse
 from src.chat_history.store import ChatHistoryStore
 from src.users.repository import UserRecord
@@ -32,7 +33,7 @@ async def chat(
 ) -> ChatResponse:
     message = payload.message.strip()
     if not message:
-        raise HTTPException(status_code=400, detail="Message must not be empty.")
+        raise api_error(400, ErrorCode.MESSAGE_EMPTY)
 
     if auth_user is not None:
         effective_user_id = auth_user.id
@@ -47,7 +48,7 @@ async def chat(
             adopt_client_session_id=auth_user is None,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
+        raise api_error(403, ErrorCode.SESSION_FORBIDDEN, str(exc)) from exc
 
     graph = request.app.state.graph
     config = {"configurable": {"thread_id": session_id}}

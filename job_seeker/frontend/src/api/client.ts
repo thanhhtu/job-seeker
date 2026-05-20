@@ -1,9 +1,13 @@
 import { env } from "@/config/env";
 import { parseError } from "@/utils/error";
-import { translateApiMessage } from "@/utils/translateError";
+import { translateApiError } from "@/utils/translateError";
 
 export class ApiError extends Error {
-  constructor(public readonly status: number, message: string) {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly messageCode?: string
+  ) {
     super(message);
     this.name = "ApiError";
   }
@@ -48,7 +52,9 @@ export async function apiFetch(path: string, options: FetchOptions = {}): Promis
   if (!skipAuth && token === undefined && tokenProvider) {
     token = await tokenProvider();
   }
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${env.apiUrl}${path}`, { ...init, headers });
 
@@ -70,8 +76,9 @@ export async function apiFetch(path: string, options: FetchOptions = {}): Promis
   }
 
   if (!res.ok) {
-    const msg = translateApiMessage(await parseError(res));
-    throw new ApiError(res.status, msg);
+    const payload = await parseError(res);
+    const msg = translateApiError(payload);
+    throw new ApiError(res.status, msg, payload.message_code);
   }
 
   return res;

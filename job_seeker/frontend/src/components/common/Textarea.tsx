@@ -87,7 +87,9 @@ const Textarea: React.FC<InputProps> = ({
       if (e.key === 'Enter' && e.shiftKey) {
         // Let browser insert the newline, then measure
         setTimeout(() => {
-          if (textareaRef.current) adjustHeight(textareaRef.current);
+          if (textareaRef.current) {
+            adjustHeight(textareaRef.current);
+          }
         }, 0);
       }
 

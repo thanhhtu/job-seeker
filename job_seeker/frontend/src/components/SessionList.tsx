@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { colors } from "@/theme/colors";
 import { SessionSummary } from "@/types/session";
+import {
+  getSessionDisplayTitle,
+  isPlaceholderSessionTitle,
+  placeholderSessionTitleClassName,
+} from "@/utils/sessionTitle";
 import { MessageSquareMore, PencilLine, Trash } from "lucide-react";
 import { Button, Dialog, Input } from "./common";
 
@@ -14,22 +19,11 @@ type Props = {
   onDeleteSession: (sessionId: string) => void;
 };
 
-function defaultLabel(s: SessionSummary): string {
-  const fallback = [
-    "Create Chatbot GPT...",
-    "Create Html Game Environment...",
-    "Apply To Leave For Emergency",
-    "What Is UI UX Design?",
-    "Min States For Binary DFA",
-    "Crypto Lending App Name",
-  ];
-  const index = parseInt(s.session_id.slice(-1), 16) % fallback.length;
-  return fallback[index];
-}
-
 function isWithinLast7Days(iso: string): boolean {
   const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return false;
+  if (Number.isNaN(t)) {
+    return false;
+  }
   return Date.now() - t < 7 * 24 * 60 * 60 * 1000;
 }
 
@@ -53,28 +47,29 @@ export function SessionList({
   const recent = sorted.filter((s) => isWithinLast7Days(s.last_message_at || s.created_at));
   const older = sorted.filter((s) => !isWithinLast7Days(s.last_message_at || s.created_at));
 
-  const getTitle = (s: SessionSummary) => {
-    const fromApi = s.title?.trim();
-    if (fromApi) return fromApi;
-    return defaultLabel(s);
-  };
-
   const openRename = (session: SessionSummary) => {
-    const title = getTitle(session);
-    setDraftTitle(title);
+    const title = getSessionDisplayTitle(session.title);
+    const draft = isPlaceholderSessionTitle(title) ? "" : title;
+    setDraftTitle(draft);
     setRenameTarget({ id: session.session_id, title });
   };
 
   const confirmRename = () => {
-    if (!renameTarget) return;
+    if (!renameTarget) {
+      return;
+    }
     const next = draftTitle.trim();
-    if (!next) return;
+    if (!next) {
+      return;
+    }
     void onRenameSession(renameTarget.id, next);
     setRenameTarget(null);
   };
 
   const confirmDelete = () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget) {
+      return;
+    }
     onDeleteSession(deleteTarget.session_id);
     setDeleteTarget(null);
   };
@@ -85,7 +80,7 @@ export function SessionList({
         {recent.map((s) => (
           <SessionRow
             key={s.session_id}
-            title={getTitle(s)}
+            title={getSessionDisplayTitle(s.title)}
             active={currentSessionId === s.session_id}
             onSelect={() => onSelect(s.session_id)}
             onEdit={() => openRename(s)}
@@ -102,7 +97,7 @@ export function SessionList({
               {older.map((s) => (
                 <SessionRow
                   key={s.session_id}
-                  title={getTitle(s)}
+                  title={getSessionDisplayTitle(s.title)}
                   active={currentSessionId === s.session_id}
                   onSelect={() => onSelect(s.session_id)}
                   onEdit={() => openRename(s)}
@@ -135,7 +130,9 @@ export function SessionList({
           value={draftTitle}
           onChange={(e) => setDraftTitle(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") confirmRename();
+            if (e.key === "Enter") {
+              confirmRename();
+            }
           }}
           placeholder="Nhập tên cuộc trò chuyện"
           className="!rounded-xl"
@@ -159,8 +156,14 @@ export function SessionList({
       >
         <p className={`text-[13px] leading-relaxed ${colors.neutral.text600}`}>
           Bạn có chắc muốn xóa{" "}
-          <span className={`font-semibold ${colors.neutral.text800}`}>
-            {deleteTarget ? getTitle(deleteTarget) : ""}
+          <span
+            className={
+              deleteTarget && isPlaceholderSessionTitle(getSessionDisplayTitle(deleteTarget.title))
+                ? placeholderSessionTitleClassName()
+                : `font-semibold ${colors.neutral.text800}`
+            }
+          >
+            {deleteTarget ? getSessionDisplayTitle(deleteTarget.title) : ""}
           </span>
           ? Hành động này không thể hoàn tác.
         </p>
@@ -190,11 +193,15 @@ function SessionRow({
     ? colors.neutral.text400
     : colors.neutral.text900;
 
-  const labelClass = active
-    ? `font-semibold ${colors.primary.text}`
-    : faded
-    ? `font-medium ${colors.neutral.text400}`
-    : `font-medium ${colors.neutral.text900}`;
+  const isPlaceholder = isPlaceholderSessionTitle(title);
+
+  const labelClass = isPlaceholder
+    ? placeholderSessionTitleClassName()
+    : active
+      ? `font-semibold ${colors.primary.text}`
+      : faded
+        ? `${colors.neutral.text400}`
+        : `${colors.neutral.text900}`;
 
   return (
     <div

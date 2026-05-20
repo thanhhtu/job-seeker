@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.api.auth.deps import get_current_user
+from src.api.errors import ErrorCode, api_error
 from src.api.sessions.schemas import (
     ChatHistoryResponse,
     ChatMessage,
@@ -52,18 +53,18 @@ async def update_my_chat_session_title(
 ) -> ChatSessionSummary:
     owner = await _store.get_session_owner(session_id)
     if owner is None:
-        raise HTTPException(status_code=404, detail="Session not found.")
+        raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
     if owner != user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this session.")
+        raise api_error(403, ErrorCode.SESSION_ACCESS_DENIED)
 
     updated = await _store.update_session_title(session_id, user.id, payload.title)
     if not updated:
-        raise HTTPException(status_code=400, detail="Title must not be empty.")
+        raise api_error(400, ErrorCode.TITLE_EMPTY)
 
     rows = await _store.list_sessions_for_user(user.id)
     row = next((r for r in rows if r["session_id"] == session_id), None)
     if row is None:
-        raise HTTPException(status_code=404, detail="Session not found.")
+        raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
 
     return ChatSessionSummary(
         session_id=row["session_id"],
@@ -89,9 +90,9 @@ async def get_session_messages(
 ) -> ChatHistoryResponse:
     owner = await _store.get_session_owner(session_id)
     if owner is None:
-        raise HTTPException(status_code=404, detail="Session not found.")
+        raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
     if owner != user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this session.")
+        raise api_error(403, ErrorCode.SESSION_ACCESS_DENIED)
 
     rows = await _store.get_messages(session_id)
     messages = [

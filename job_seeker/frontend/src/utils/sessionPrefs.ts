@@ -3,7 +3,9 @@ import { STORAGE_KEYS } from "@/constant/storage";
 export function loadSessionTitles(): Record<string, string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.sessionTitles);
-    if (!raw) return {};
+    if (!raw) {
+      return {};
+    }
     const parsed = JSON.parse(raw) as unknown;
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return parsed as Record<string, string>;
@@ -23,7 +25,9 @@ export function persistSessionTitle(sessionId: string, title: string): void {
 export function loadHiddenSessionIds(): Set<string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.hiddenSessions);
-    if (!raw) return new Set();
+    if (!raw) {
+      return new Set();
+    }
     const parsed = JSON.parse(raw) as unknown;
     if (Array.isArray(parsed)) {
       return new Set(parsed.filter((id): id is string => typeof id === "string"));

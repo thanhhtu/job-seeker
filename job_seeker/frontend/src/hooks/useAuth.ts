@@ -79,8 +79,12 @@ export function useAuth() {
   }, [applyAuth, logout]);
 
   const getValidAccessToken = useCallback(async (): Promise<string | null> => {
-    if (!accessToken) return null;
-    if (!isTokenExpired(accessToken)) return accessToken;
+    if (!accessToken) {
+      return null;
+    }
+    if (!isTokenExpired(accessToken)) {
+      return accessToken;
+    }
     return refreshAccessToken();
   }, [accessToken, refreshAccessToken]);
 
@@ -126,7 +130,9 @@ export function useAuth() {
   }, [getValidAccessToken, refreshAccessToken]);
 
   useEffect(() => {
-    if (!accessToken || !refreshToken) return;
+    if (!accessToken || !refreshToken) {
+      return;
+    }
 
     const interval = window.setInterval(() => {
       if (isTokenExpired(accessToken, 60)) {

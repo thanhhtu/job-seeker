@@ -41,7 +41,9 @@ export function ChatPage() {
   const ignoreInputChange = useRef(false);
 
   const handleInputChange = useCallback((value: string) => {
-    if (ignoreInputChange.current) return;
+    if (ignoreInputChange.current) {
+      return;
+    }
     setInput(value);
   }, []);
 
@@ -66,21 +68,29 @@ export function ChatPage() {
         logout();
         return;
       }
-      if (err instanceof ApiError) toast.error(err.message);
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      }
     } finally {
       setLoadingSessions(false);
     }
   }, [accessToken, logout]);
 
   useEffect(() => {
-    if (!isBootstrapping) void fetchSessions();
+    if (!isBootstrapping) {
+      void fetchSessions();
+    }
   }, [fetchSessions, isBootstrapping]);
 
   useEffect(() => {
-    if (isBootstrapping) return;
+    if (isBootstrapping) {
+      return;
+    }
 
     if (!accessToken) {
-      if (urlSessionId) navigate("/chat", { replace: true });
+      if (urlSessionId) {
+        navigate("/chat", { replace: true });
+      }
       setMessages([]);
       return;
     }
@@ -101,7 +111,9 @@ export function ChatPage() {
           setLoadedSessionId(urlSessionId);
         }
       } catch (err) {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         if (err instanceof ApiError && err.status === 401) {
           logout();
           return;
@@ -112,7 +124,9 @@ export function ChatPage() {
           navigate("/chat", { replace: true });
           return;
         }
-        if (err instanceof ApiError) toast.error(err.message);
+        if (err instanceof ApiError) {
+          toast.error(err.message);
+        }
       }
     })();
 
@@ -132,7 +146,9 @@ export function ChatPage() {
         logout();
         return;
       }
-      if (err instanceof ApiError) toast.error(err.message);
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      }
     }
   };
 
@@ -145,12 +161,16 @@ export function ChatPage() {
   };
 
   const handleSelectSession = (id: string) => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      return;
+    }
     navigate(`/chat/${id}`);
   };
 
   const handleSend = async (text: string) => {
-    if (!text || isSending) return;
+    if (!text || isSending) {
+      return;
+    }
 
     ignoreInputChange.current = true;
     setInput("");
@@ -201,7 +221,9 @@ export function ChatPage() {
         clearGuestSessionId();
         setGuestSessionIdState(null);
       }
-      if (err instanceof ApiError) toast.error(err.message);
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      }
     } finally {
       setIsSending(false);
     }
