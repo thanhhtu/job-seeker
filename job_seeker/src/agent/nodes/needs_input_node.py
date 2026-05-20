@@ -10,18 +10,15 @@ _MSG_EMPTY_QUERY = (
 )
 
 _MSG_SEARCH_CONTEXT = (
-    "I need a clearer job target to search: please share a role or job title, "
-    "main skills (e.g. Python, React), or specific keywords."
+    "I need a clearer job target to search: please share a role or job title, main skills (e.g. Python, React), or specific keywords."
 )
 
 _MSG_LOCATION_NEEDS_MORE = (
-    "You mentioned a location. To search effectively, add either a target role/skills "
-    "or filters such as seniority, work mode (remote/onsite), experience, or salary."
+    "You mentioned a location. To search effectively, add either a target role/skills or filters such as seniority, work mode (remote/onsite), experience, or salary."
 )
 
 _MSG_VAGUE_QUERY = (
-    "Your message is still very general. Please name a role, skills, or location "
-    "you care about."
+    "Your message is still very general. Please name a role, skills, or location you care about."
 )
 
 

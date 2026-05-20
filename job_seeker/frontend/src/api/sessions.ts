@@ -13,6 +13,17 @@ export async function listSessions(): Promise<SessionSummary[]> {
   return res.json() as Promise<SessionSummary[]>;
 }
 
+export async function updateSessionTitle(
+  sessionId: string,
+  title: string
+): Promise<SessionSummary> {
+  const res = await apiFetch(`/api/me/chat-sessions/${sessionId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ title }),
+  });
+  return res.json() as Promise<SessionSummary>;
+}
+
 export async function getSessionMessages(sessionId: string): Promise<ChatMessage[]> {
   const res = await apiFetch(`/api/sessions/${sessionId}/messages`);
   const data = (await res.json()) as { messages: RawMessage[] };

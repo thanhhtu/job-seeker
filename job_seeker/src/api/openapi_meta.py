@@ -6,6 +6,17 @@ OPENAPI_TAGS: list[dict[str, str]] = [
         "description": "Check whether the API is available and healthy.",
     },
     {
+        "name": "auth",
+        "description": "Register, log in, and obtain JWT access tokens (Bearer).",
+    },
+    {
+        "name": "me",
+        "description": (
+            "Information and resources associated with the authenticated user "
+            "(Bearer required)."
+        ),
+    },
+    {
         "name": "chat",
         "description": (
             "Send messages to the job-search assistant. "
@@ -19,17 +30,6 @@ OPENAPI_TAGS: list[dict[str, str]] = [
         "description": (
             "Retrieve message history for a session. **JWT required**; "
             "only the session owner can access it."
-        ),
-    },
-    {
-        "name": "auth",
-        "description": "Register, log in, and obtain JWT access tokens (Bearer).",
-    },
-    {
-        "name": "me",
-        "description": (
-            "Information and resources associated with the authenticated user "
-            "(Bearer required)."
         ),
     },
 ]

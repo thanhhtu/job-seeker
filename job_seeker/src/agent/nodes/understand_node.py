@@ -51,11 +51,13 @@ def _get_llm() -> ChatMistralAI:
 
 
 _SYSTEM_PROMPT = """
-You are a job search assistant. Read the full conversation (all user and assistant
-turns) and produce:
+You are a job search assistant. Read the full conversation for context, but extract
+slot updates only from the latest user turn. Existing server state carries forward
+older slot values and merges your latest-turn updates.
+
+Produce:
 1) A short conversation_summary (2–5 sentences, Vietnamese or English matching the user).
-2) Structured search slots from EVERYTHING the user has stated across turns
-   (carry forward earlier constraints; refine when the user corrects themselves).
+2) Structured search slot updates from the latest user turn only.
 
 Return ONLY a JSON object of this shape:
 {
@@ -74,7 +76,7 @@ Return ONLY a JSON object of this shape:
 }
 
 Slot update rules:
-- Omit a key in "slots" when that constraint was not mentioned this turn (server keeps old value).
+- Omit a key in "slots" when that constraint was not mentioned in the latest user turn.
 - To **remove** a constraint the user explicitly dropped, set the value to the exact string "__CLEAR__"
   (do not use null for removal — null means "not mentioned").
 - For new or updated values, send the new value normally.

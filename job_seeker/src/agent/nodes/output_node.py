@@ -85,8 +85,24 @@ def output_node(state: JobSearchState) -> dict:
 
     logger.info("Output node: formatted %d jobs", len(reranked_results))
 
-    return {
+    result = {
         "output": final_output,
         # Tích lũy vào messages để lượt hội thoại sau có context
         "messages": [AIMessage(content=final_output)],
     }
+    if not clarification_prompt:
+        result.update(
+            {
+                "conversation_summary": "",
+                "parsed_query": {},
+                "missing_slots": [],
+                "clarification_prompt": "",
+                "rewritten_query": "",
+                "bm25_results": [],
+                "vector_results": [],
+                "rrf_results": [],
+                "reranked_results": [],
+                "generated_answer": "",
+            }
+        )
+    return result

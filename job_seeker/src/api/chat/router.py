@@ -1,0 +1,71 @@
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from langchain_core.messages import HumanMessage
+
+from src.api.auth.deps import optional_current_user
+from src.api.chat.schemas import ChatRequest, ChatResponse
+from src.chat_history.store import ChatHistoryStore
+from src.users.repository import UserRecord
+
+router = APIRouter(prefix="/api", tags=["chat"])
+_store = ChatHistoryStore()
+
+
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    summary="Chat with the agent",
+    description=(
+        "If the request includes the header `Authorization: Bearer <JWT>`, "
+        "the message is associated with the authenticated user and `user_id` "
+        "in the request body is ignored; chat history is stored in `chat_messages`. "
+        "Without a token: guest flow (`user_id` + `session_id`, `chat_sessions.is_guest=true`) — "
+        "LangGraph checkpoints still use `session_id`, but **no** rows are written "
+        "to `chat_messages`."
+    ),
+)
+async def chat(
+    request: Request,
+    payload: ChatRequest,
+    auth_user: UserRecord | None = Depends(optional_current_user),
+) -> ChatResponse:
+    message = payload.message.strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message must not be empty.")
+
+    if auth_user is not None:
+        effective_user_id = auth_user.id
+    else:
+        effective_user_id = (payload.user_id or "anonymous").strip() or "anonymous"
+
+    try:
+        session_id = await _store.ensure_session(
+            effective_user_id,
+            payload.session_id,
+            is_guest=auth_user is None,
+            adopt_client_session_id=auth_user is None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    graph = request.app.state.graph
+    config = {"configurable": {"thread_id": session_id}}
+
+    result = await graph.ainvoke({"messages": [HumanMessage(content=message)]}, config)
+    assistant_message = (result.get("output") or "").strip()
+    if not assistant_message:
+        assistant_message = "I could not generate a response. Please try again."
+
+    if auth_user is not None:
+        await _store.add_message(session_id=session_id, role="user", content=message)
+        await _store.set_session_title_if_empty(session_id, message)
+        await _store.add_message(
+            session_id=session_id, role="assistant", content=assistant_message
+        )
+
+    return ChatResponse(
+        session_id=session_id,
+        user_message=message,
+        assistant_message=assistant_message,
+    )

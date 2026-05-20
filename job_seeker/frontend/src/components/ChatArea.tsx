@@ -39,17 +39,26 @@ type Props = {
   input: string;
   isSending: boolean;
   onInputChange: (v: string) => void;
-  onSend: (e: FormEvent) => void;
+  onSend: (text: string) => void;
 };
 
 export function ChatArea({ messages, input, isSending, onInputChange, onSend }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const textarea = formRef.current?.querySelector("textarea");
+    const text = (textarea?.value ?? input).trim();
+    if (!text || isSending) return;
+    onSend(text);
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && input.trim() && !isSending) {
-      formRef.current?.requestSubmit();
-    }
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+    const text = e.currentTarget.value.trim();
+    if (!text || isSending) return;
+    formRef.current?.requestSubmit();
   };
 
   useEffect(() => {
@@ -78,7 +87,7 @@ export function ChatArea({ messages, input, isSending, onInputChange, onSend }: 
         <div className="max-w-5xl mx-auto pb-8">
           <form
             ref={formRef}
-            onSubmit={onSend}
+            onSubmit={handleSubmit}
             className={`flex items-center ${colors.basic.bgWhite} rounded-[40px] p-2 pl-6 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border ${colors.neutral.border50} transition-all focus-within:shadow-[0_10px_40px_rgba(0,0,0,0.1)]`}
           >
             <div className="shrink-0 flex items-center justify-center mr-3">
@@ -87,7 +96,7 @@ export function ChatArea({ messages, input, isSending, onInputChange, onSend }: 
               </span>
             </div>
             <Textarea
-              placeholder="Nhập tin nhắn..."
+              placeholder="Nhập câu hỏi..."
               value={input}
               variant="secondary"
               className="flex-1 py-3 text-[13px]"

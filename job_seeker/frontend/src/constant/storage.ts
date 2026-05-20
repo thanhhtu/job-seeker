@@ -1,9 +1,11 @@
 export const STORAGE_KEYS = {
-  token: "job_seeker_access_token",
-  refreshToken: "job_seeker_refresh_token",
-  user: "job_seeker_user",
-  sessionTitles: "job_seeker_session_titles",
-  hiddenSessions: "job_seeker_hidden_sessions",
+  token: "access_token",
+  refreshToken: "refresh_token",
+  user: "user",
+  sessionTitles: "session_titles",
+  hiddenSessions: "hidden_sessions",
+  guestId: "guest_id",
+  guestSessionId: "guest_session_id",
 } as const;
 
 /** Keys cleared on logout (auth only). */

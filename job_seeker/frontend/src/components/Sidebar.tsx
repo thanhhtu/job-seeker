@@ -13,12 +13,11 @@ type Props = {
   sessions: SessionSummary[];
   currentSessionId: string | null;
   loadingSessions: boolean;
-  sessionTitles: Record<string, string>;
   onLogin: (data: AuthResponse) => void;
   onLogout: () => void;
   onRefreshSessions: () => void;
   onSelectSession: (id: string) => void;
-  onRenameSession: (sessionId: string, title: string) => void;
+  onRenameSession: (sessionId: string, title: string) => void | Promise<void>;
   onDeleteSession: (sessionId: string) => void;
   onNewChat: () => void;
 };
@@ -33,7 +32,6 @@ export function Sidebar({
   onLogout,
   onRefreshSessions,
   onSelectSession,
-  sessionTitles,
   onRenameSession,
   onDeleteSession,
   onNewChat,
@@ -92,7 +90,6 @@ export function Sidebar({
             sessions={sessions}
             currentSessionId={currentSessionId}
             loading={loadingSessions}
-            sessionTitles={sessionTitles}
             onRefresh={onRefreshSessions}
             onSelect={onSelectSession}
             onRenameSession={onRenameSession}

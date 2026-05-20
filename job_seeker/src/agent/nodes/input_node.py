@@ -5,7 +5,6 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.state import JobSearchState
 
-
 def _extract_text(content) -> str:
     if isinstance(content, str):
         return content.strip()
@@ -20,19 +19,27 @@ def _extract_text(content) -> str:
     return ""
 
 
+def _new_turn_state(raw_query: str) -> dict:
+    return {
+        "raw_query": raw_query,
+        "clarification_prompt": "",
+        "output": "",
+        "rewritten_query": "",
+        "bm25_results": [],
+        "vector_results": [],
+        "rrf_results": [],
+        "reranked_results": [],
+        "generated_answer": "",
+    }
+
+
 def input_node(state: JobSearchState) -> dict:
     messages = state.get("messages") or []
 
     for msg in reversed(messages):
         if isinstance(msg, HumanMessage):
-            return {
-                "raw_query": _extract_text(msg.content)
-            }
+            return _new_turn_state(_extract_text(msg.content))
         if isinstance(msg, dict) and msg.get("role") == "user":
-            return {
-                "raw_query": _extract_text(msg.get("content") or "")
-            }
+            return _new_turn_state(_extract_text(msg.get("content") or ""))
 
-    return {
-        "raw_query": _extract_text(state.get("raw_query") or "")
-    }
+    return _new_turn_state(_extract_text(state.get("raw_query") or ""))

@@ -4,27 +4,23 @@ import asyncpg
 import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.api.deps import get_current_user
-from src.api.schemas import (
-    ChatSessionSummary,
+from src.api.auth.deps import get_current_user
+from src.api.auth.jwt_tokens import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+)
+from src.api.auth.passwords import hash_password, verify_password
+from src.api.auth.schemas import (
     RefreshRequest,
     TokenResponse,
     UserLogin,
     UserPublic,
     UserRegister,
 )
-from src.auth.jwt_tokens import (
-    create_access_token,
-    create_refresh_token,
-    decode_refresh_token,
-)
-from src.auth.passwords import hash_password, verify_password
-from src.chat_history.store import ChatHistoryStore
 from src.users.repository import UserRecord, create_user, get_user_by_email, get_user_by_id
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-me_router = APIRouter(prefix="/api/me", tags=["me"])
-_store = ChatHistoryStore()
 
 
 def _token_bundle(user: UserRecord) -> TokenResponse:
@@ -126,25 +122,3 @@ async def refresh_tokens(payload: RefreshRequest) -> TokenResponse:
 )
 async def auth_me(user: UserRecord = Depends(get_current_user)) -> UserPublic:
     return UserPublic(id=user.id, email=user.email)
-
-
-@me_router.get(
-    "/chat-sessions",
-    response_model=list[ChatSessionSummary],
-    summary="My chat sessions",
-    description="JWT required. Returns sessions with message count and last message timestamp.",
-)
-async def list_my_chat_sessions(
-    user: UserRecord = Depends(get_current_user),
-) -> list[ChatSessionSummary]:
-    rows = await _store.list_sessions_for_user(user.id)
-    return [
-        ChatSessionSummary(
-            session_id=r["session_id"],
-            created_at=r["created_at"],
-            last_message_at=r["last_message_at"],
-            message_count=int(r["message_count"]),
-        )
-        for r in rows
-    ]
-    

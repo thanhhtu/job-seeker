@@ -8,10 +8,9 @@ type Props = {
   sessions: SessionSummary[];
   currentSessionId: string | null;
   loading: boolean;
-  sessionTitles: Record<string, string>;
   onRefresh: () => void;
   onSelect: (id: string) => void;
-  onRenameSession: (sessionId: string, title: string) => void;
+  onRenameSession: (sessionId: string, title: string) => void | Promise<void>;
   onDeleteSession: (sessionId: string) => void;
 };
 
@@ -37,7 +36,6 @@ function isWithinLast7Days(iso: string): boolean {
 export function SessionList({
   sessions,
   currentSessionId,
-  sessionTitles,
   onSelect,
   onRenameSession,
   onDeleteSession,
@@ -55,7 +53,11 @@ export function SessionList({
   const recent = sorted.filter((s) => isWithinLast7Days(s.last_message_at || s.created_at));
   const older = sorted.filter((s) => !isWithinLast7Days(s.last_message_at || s.created_at));
 
-  const getTitle = (s: SessionSummary) => sessionTitles[s.session_id] ?? defaultLabel(s);
+  const getTitle = (s: SessionSummary) => {
+    const fromApi = s.title?.trim();
+    if (fromApi) return fromApi;
+    return defaultLabel(s);
+  };
 
   const openRename = (session: SessionSummary) => {
     const title = getTitle(session);
@@ -67,7 +69,7 @@ export function SessionList({
     if (!renameTarget) return;
     const next = draftTitle.trim();
     if (!next) return;
-    onRenameSession(renameTarget.id, next);
+    void onRenameSession(renameTarget.id, next);
     setRenameTarget(null);
   };
 
