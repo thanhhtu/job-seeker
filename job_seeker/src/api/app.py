@@ -32,13 +32,20 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Startup: Postgres checkpoint schema + pool, compile LangGraph once into app.state.graph.
+    Shutdown: close the checkpoint pool and the app's async DB pool."""
+    
     dsn = postgres_conninfo_for_psycopg(settings.database_url)
+
     await ensure_langgraph_checkpoint_schema(dsn)
+
     pool = AsyncConnectionPool(conninfo=dsn, max_size=10, open=False)
     await pool.open()
+
     checkpointer = AsyncPostgresSaver(pool)
-    app.state.graph = build_graph(checkpointer)
+    app.state.graph = build_graph(checkpointer) 
     logger.info("LangGraph compiled with Postgres checkpointer (thread_id = session_id)")
+
     try:
         yield
     finally:

@@ -16,7 +16,7 @@ type Props = {
   onRefresh: () => void;
   onSelect: (id: string) => void;
   onRenameSession: (sessionId: string, title: string) => void | Promise<void>;
-  onDeleteSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => void | Promise<void>;
 };
 
 function isWithinLast7Days(iso: string): boolean {
@@ -70,7 +70,7 @@ export function SessionList({
     if (!deleteTarget) {
       return;
     }
-    onDeleteSession(deleteTarget.session_id);
+    void onDeleteSession(deleteTarget.session_id);
     setDeleteTarget(null);
   };
 

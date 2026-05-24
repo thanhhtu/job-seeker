@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ChatArea } from "@/components/ChatArea";
@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import {
   ApiError,
   AuthResponse,
+  deleteSession,
   getSessionMessages,
   listSessions,
   sendMessage,
@@ -21,7 +22,6 @@ import {
   setGuestSessionId as persistGuestSessionId,
 } from "@/utils/ids";
 import { colors } from "@/theme/colors";
-import { loadHiddenSessionIds, persistHiddenSession } from "@/utils/sessionPrefs";
 
 export function ChatPage() {
   const { accessToken, user, isBootstrapping, login, logout } = useAuth();
@@ -46,13 +46,6 @@ export function ChatPage() {
     }
     setInput(value);
   }, []);
-
-  const [hiddenSessionIds, setHiddenSessionIds] = useState<Set<string>>(loadHiddenSessionIds);
-
-  const visibleSessions = useMemo(
-    () => sessions.filter((s) => !hiddenSessionIds.has(s.session_id)),
-    [sessions, hiddenSessionIds]
-  );
 
   const fetchSessions = useCallback(async () => {
     if (!accessToken) {
@@ -152,11 +145,21 @@ export function ChatPage() {
     }
   };
 
-  const handleDeleteSession = (sessionId: string) => {
-    persistHiddenSession(sessionId);
-    setHiddenSessionIds((prev) => new Set([...prev, sessionId]));
-    if (currentSessionId === sessionId) {
-      navigate("/chat");
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await deleteSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
+      if (currentSessionId === sessionId) {
+        navigate("/chat");
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+        return;
+      }
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      }
     }
   };
 
@@ -269,7 +272,7 @@ export function ChatPage() {
         <Sidebar
           token={accessToken}
           user={user}
-          sessions={visibleSessions}
+          sessions={sessions}
           currentSessionId={activeChatSessionId}
           loadingSessions={loadingSessions}
           onLogin={handleLogin}

@@ -36,7 +36,7 @@ class ChatHistoryStore:
         pool = await get_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT user_id FROM chat_sessions WHERE session_id = $1",
+                "SELECT user_id FROM chat_sessions WHERE session_id = $1 AND deleted_at IS NULL",
                 session_id,
             )
             if row is None:
@@ -90,7 +90,9 @@ class ChatHistoryStore:
                 """
                 UPDATE chat_sessions
                 SET title = $2
-                WHERE session_id = $1 AND (title IS NULL OR btrim(title) = '')
+                WHERE session_id = $1
+                  AND deleted_at IS NULL
+                  AND (title IS NULL OR btrim(title) = '')
                 """,
                 session_id,
                 title,
@@ -108,7 +110,10 @@ class ChatHistoryStore:
                 """
                 UPDATE chat_sessions
                 SET title = $3
-                WHERE session_id = $1 AND user_id = $2 AND is_guest = false
+                WHERE session_id = $1
+                  AND user_id = $2
+                  AND is_guest = false
+                  AND deleted_at IS NULL
                 RETURNING session_id
                 """,
                 session_id,
@@ -117,11 +122,29 @@ class ChatHistoryStore:
             )
         return row is not None
 
+    async def delete_session(self, session_id: str, user_id: str) -> bool:
+        """Soft-delete a session by stamping ``deleted_at``. Idempotent for already-deleted rows."""
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE chat_sessions
+                SET deleted_at = NOW()
+                WHERE session_id = $1
+                  AND user_id = $2
+                  AND deleted_at IS NULL
+                RETURNING session_id
+                """,
+                session_id,
+                user_id,
+            )
+        return row is not None
+
     async def get_session_owner(self, session_id: str) -> str | None:
         pool = await get_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT user_id FROM chat_sessions WHERE session_id = $1",
+                "SELECT user_id FROM chat_sessions WHERE session_id = $1 AND deleted_at IS NULL",
                 session_id,
             )
         if row is None:
@@ -148,7 +171,9 @@ class ChatHistoryStore:
                         WHERE m.session_id = s.session_id
                     ) AS message_count
                 FROM chat_sessions s
-                WHERE s.user_id = $1 AND s.is_guest = false
+                WHERE s.user_id = $1
+                  AND s.is_guest = false
+                  AND s.deleted_at IS NULL
                 ORDER BY s.created_at DESC
                 """,
                 user_id,

@@ -18,7 +18,7 @@ type Props = {
   onRefreshSessions: () => void;
   onSelectSession: (id: string) => void;
   onRenameSession: (sessionId: string, title: string) => void | Promise<void>;
-  onDeleteSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => void | Promise<void>;
   onNewChat: () => void;
 };
 

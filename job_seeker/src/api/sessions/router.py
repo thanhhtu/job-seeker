@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from src.api.auth.deps import get_current_user
 from src.api.errors import ErrorCode, api_error
@@ -73,6 +73,32 @@ async def update_my_chat_session_title(
         last_message_at=row["last_message_at"],
         message_count=int(row["message_count"]),
     )
+
+
+@me_router.delete(
+    "/chat-sessions/{session_id}",
+    status_code=204,
+    summary="Delete chat session",
+    description=(
+        "JWT required. Soft-deletes the session (sets `deleted_at`); messages and the "
+        "LangGraph checkpoint are kept so the row can be restored later."
+    ),
+)
+async def delete_my_chat_session(
+    session_id: str,
+    user: UserRecord = Depends(get_current_user),
+) -> Response:
+    owner = await _store.get_session_owner(session_id)
+    if owner is None:
+        raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
+    if owner != user.id:
+        raise api_error(403, ErrorCode.SESSION_ACCESS_DENIED)
+
+    deleted = await _store.delete_session(session_id, user.id)
+    if not deleted:
+        raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
+
+    return Response(status_code=204)
 
 
 @router.get(
