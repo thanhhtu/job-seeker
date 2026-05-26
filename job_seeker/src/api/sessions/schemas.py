@@ -20,6 +20,7 @@ class UpdateSessionTitleRequest(BaseModel):
 class ChatMessage(BaseModel):
     role: str
     content: str
+    data: dict | None = None
     created_at: datetime
 
 

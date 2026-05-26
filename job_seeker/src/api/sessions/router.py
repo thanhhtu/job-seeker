@@ -125,6 +125,7 @@ async def get_session_messages(
         ChatMessage(
             role=row["role"],
             content=row["content"],
+            data=row.get("data"),
             created_at=row["created_at"],
         )
         for row in rows

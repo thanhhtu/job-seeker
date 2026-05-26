@@ -75,7 +75,10 @@ async def chat(
         await _store.add_message(session_id=session_id, role="user", content=message)
         await _store.set_session_title_if_empty(session_id, message)
         await _store.add_message(
-            session_id=session_id, role="assistant", content=assistant_message
+            session_id=session_id,
+            role="assistant",
+            content=assistant_message,
+            data=data.model_dump(exclude_none=True) if data else None,
         )
 
     return ChatResponse(

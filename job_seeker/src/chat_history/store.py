@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 from uuid import uuid4
 
@@ -56,14 +57,22 @@ class ChatHistoryStore:
                 raise ValueError("Session does not belong to user.")
         return session_id
 
-    async def add_message(self, session_id: str, role: str, content: str) -> None:
+    async def add_message(
+        self,
+        session_id: str,
+        role: str,
+        content: str,
+        data: dict[str, Any] | None = None,
+    ) -> None:
         pool = await get_pool()
+        data_json = json.dumps(data, ensure_ascii=False) if data is not None else None
         async with pool.acquire() as conn:
             await conn.execute(
-                "INSERT INTO chat_messages(session_id, role, content) VALUES ($1, $2, $3)",
+                "INSERT INTO chat_messages(session_id, role, content, data) VALUES ($1, $2, $3, $4::jsonb)",
                 session_id,
                 role,
                 content,
+                data_json,
             )
 
     async def get_messages(self, session_id: str) -> list[dict[str, Any]]:
@@ -71,14 +80,23 @@ class ChatHistoryStore:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT id, role, content, created_at
+                SELECT id, role, content, data, created_at
                 FROM chat_messages
                 WHERE session_id = $1
                 ORDER BY id ASC
                 """,
                 session_id,
             )
-        return [dict(row) for row in rows]
+        result = []
+        for row in rows:
+            msg = dict(row)
+            if isinstance(msg.get("data"), str):
+                try:
+                    msg["data"] = json.loads(msg["data"])
+                except (json.JSONDecodeError, TypeError):
+                    msg["data"] = None
+            result.append(msg)
+        return result
 
     async def set_session_title_if_empty(self, session_id: str, message: str) -> None:
         title = message.strip()[:80]
