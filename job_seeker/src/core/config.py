@@ -16,6 +16,9 @@ class Settings(BaseSettings):
 
     # BGE Reranker (Docker service at port 8001)
     reranker_url: str = "http://localhost:8001"
+    reranker_top_k: int = 10
+    reranker_desc_max_chars: int = 500
+    reranker_timeout: int = 90
 
     # LangSmith tracing
     langsmith_tracing: bool = False

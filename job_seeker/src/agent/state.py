@@ -7,21 +7,27 @@ from langgraph.graph.message import add_messages
 
 from src.models.job_schema import Job
 
+
 class ParsedQuery(TypedDict, total=False):
-    role:            Optional[str]        # "backend engineer", "data scientist"
-    location:        Optional[str]        # "Ha Noi", "HCM", "Da Nang", "Vietnam"
-    work_mode:       Optional[str]        # "remote", "onsite", "hybrid"
+    location:                   Optional[str]        
+    work_mode:                  Optional[str]
+    skills:                     List[str]            
+    salary_min:                 Optional[int]        
+    salary_max:                 Optional[int]
+    salary_currency:            Optional[str]        
+    job_level:                  Optional[str]        
+    candidate_experience_years: Optional[int]
+    job_experience_min:         Optional[int]
+    job_experience_max:         Optional[int]
+    job_domains:                 List[str]
+    must_include_keywords:      List[str]
+    must_exclude_keywords:      List[str]
+    soft_preferences:           List[str]
 
-    skills:          List[str]            # ["Python", "FastAPI"]
-    salary_min:      Optional[int]        # monthly, VND
-    salary_max:      Optional[int]
-    job_type:        Optional[str]        # "full-time" | "part-time" | "remote" | "hybrid"
-    job_level:       Optional[str]        # "fresher" | "mid" | "senior"
-    experience_years: Optional[int]       # candidate's years of experience (filter)
-
-    # Filled in understand_node from role/skills when absent; drives BM25 / vector text
+    # Filled in understand_node 
     keywords:        List[str]            # tokens cho BM25
     filters:         dict                 # structured filters cho vector search
+
 
 class JobSearchState(TypedDict, total=False):
     messages:             Annotated[list[AnyMessage], add_messages]

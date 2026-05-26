@@ -1,11 +1,16 @@
-# src/agent/nodes/input_node.py
 from __future__ import annotations
+
+from typing import Any
 
 from langchain_core.messages import HumanMessage
 
 from src.agent.state import JobSearchState
+from src.core.logger import get_logger
 
-def _extract_text(content) -> str:
+logger = get_logger(__name__)
+
+
+def _extract_text(content: Any) -> str:
     if isinstance(content, str):
         return content.strip()
     if isinstance(content, list):
@@ -22,6 +27,7 @@ def _extract_text(content) -> str:
 def _new_turn_state(raw_query: str) -> dict:
     return {
         "raw_query": raw_query,
+        "missing_slots": [],
         "clarification_prompt": "",
         "output": "",
         "rewritten_query": "",
@@ -38,8 +44,18 @@ def input_node(state: JobSearchState) -> dict:
 
     for msg in reversed(messages):
         if isinstance(msg, HumanMessage):
-            return _new_turn_state(_extract_text(msg.content))
+            raw = _extract_text(msg.content)
+            logger.info("input_node: source=HumanMessage raw_query_len=%d", len(raw))
+            return _new_turn_state(raw)
+            
         if isinstance(msg, dict) and msg.get("role") == "user":
-            return _new_turn_state(_extract_text(msg.get("content") or ""))
+            raw = _extract_text(msg.get("content") or "")
+            logger.info("input_node: source=dict_user raw_query_len=%d", len(raw))
+            return _new_turn_state(raw)
 
-    return _new_turn_state(_extract_text(state.get("raw_query") or ""))
+    raw = _extract_text(state.get("raw_query") or "")
+    logger.warning(
+        "input_node: no human message in state; falling back to raw_query (len=%d)",
+        len(raw),
+    )
+    return _new_turn_state(raw)

@@ -1,4 +1,3 @@
-# src/agent/nodes/output_node.py
 from __future__ import annotations
 
 from langchain_core.messages import AIMessage
@@ -20,7 +19,7 @@ def _format_job(rank: int, job: Job) -> str:
         lines.append(f"    {', '.join(job.locations)}")
 
     if job.salary_min or job.salary_max:
-        currency = job.salary_currency or "USD"
+        currency = job.salary_currency or "UNKNOWN"
         lo = f"{job.salary_min:,.0f}" if job.salary_min else "?"
         hi = f"{job.salary_max:,.0f}" if job.salary_max else "?"
         lines.append(f"    {lo} – {hi} {currency}/month")
@@ -63,15 +62,15 @@ def output_node(state: JobSearchState) -> dict:
         final_output = clarification_prompt
     elif not reranked_results:
         final_output = (
-            "No jobs found matching your criteria.\n"
-            "Try adjusting your keywords or relaxing the filters."
+            "Không tìm thấy công việc phù hợp với tiêu chí của bạn.\n"
+            "Hãy thử điều chỉnh từ khóa hoặc nới lỏng bộ lọc."
         )
         if generated_answer:
             final_output = f"{generated_answer}\n\n{final_output}"
     else:
         header = (
-            f"Found {len(reranked_results)} most relevant jobs:\n"
-            f"(Results ranked by BGE Reranker v2-m3)\n"
+            f"Tìm thấy {len(reranked_results)} công việc phù hợp nhất:\n"
+            f"(Kết quả được xếp hạng bởi BGE Reranker v2-m3)\n"
         )
         job_blocks = "\n\n".join(
             _format_job(rank, job)
@@ -79,7 +78,7 @@ def output_node(state: JobSearchState) -> dict:
         )
         sections: list[str] = []
         if generated_answer:
-            sections.append("LLM recommendation:\n" + generated_answer)
+            sections.append("Gợi ý từ LLM:\n" + generated_answer)
         sections.append(header + "\n" + job_blocks + "\n" + "─" * 60)
         final_output = "\n\n".join(sections)
 

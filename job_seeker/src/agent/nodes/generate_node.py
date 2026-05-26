@@ -1,4 +1,3 @@
-# src/agent/nodes/generate_node.py
 from __future__ import annotations
 
 import asyncio
@@ -17,13 +16,13 @@ logger = get_logger(__name__)
 
 _llm: ChatMistralAI | None = None
 
-# ── Retry config ───────────────────────────────────────────────────────────────
+# Retry config 
 _MAX_RETRIES   = 4
 _BASE_DELAY    = 2.0   # seconds
 _MAX_DELAY     = 30.0
 _JITTER        = 0.5   # ± seconds added to each delay
 
-# ── Context limits ─────────────────────────────────────────────────────────────
+# Context limits
 _MAX_JOBS      = 5     # only top-N jobs sent to LLM
 _MAX_SKILLS    = 8     # skills per job
 
@@ -54,7 +53,7 @@ def _job_context(rank: int, job: Job) -> str:
     if job.skills:
         lines.append(f"Skills: {', '.join(job.skills[:_MAX_SKILLS])}")
     if job.salary_min or job.salary_max:
-        currency = job.salary_currency or "USD"
+        currency = job.salary_currency or "UNKNOWN"
         lo = f"{job.salary_min:,.0f}" if job.salary_min else "?"
         hi = f"{job.salary_max:,.0f}" if job.salary_max else "?"
         lines.append(f"Salary: {lo}-{hi} {currency}/month")
@@ -96,8 +95,8 @@ async def generate_node(state: JobSearchState) -> dict:
     if not reranked:
         return {
             "generated_answer": (
-                "No matching jobs were found for your request. "
-                "Try broadening keywords, location, or experience constraints."
+                "Không tìm thấy công việc phù hợp với yêu cầu của bạn. "
+                "Hãy thử mở rộng từ khóa, địa điểm hoặc yêu cầu kinh nghiệm."
             )
         }
 
@@ -120,15 +119,16 @@ async def generate_node(state: JobSearchState) -> dict:
         SystemMessage(content=(
             "You are a job search assistant. "
             "Answer only from the provided CONTEXT jobs. "
-            "If information is missing, explicitly say so."
+            "If information is missing, explicitly say so. "
+            "Always respond in Vietnamese."
         )),
         HumanMessage(content=(
             f"{user_preamble}\n\n"
             f"CONTEXT jobs:\n{context}\n\n"
-            "Write a concise recommendation:\n"
-            "1) short fit summary\n"
-            "2) top 3-5 suggested jobs with reasons\n"
-            "3) next action for the user"
+            "Viết gợi ý ngắn gọn:\n"
+            "1) Tóm tắt mức độ phù hợp\n"
+            "2) Top 3-5 công việc gợi ý kèm lý do\n"
+            "3) Hành động tiếp theo cho người dùng"
         )),
     ]
 

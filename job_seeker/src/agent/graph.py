@@ -10,6 +10,7 @@ from collections.abc import Callable
 from langgraph.graph import END, StateGraph
 from langsmith import traceable
 
+from src.agent.constants import Node
 from src.agent.state import JobSearchState
 from src.agent.nodes.understand_node import understand_node
 from src.agent.nodes.generate_node import generate_node
@@ -22,6 +23,7 @@ from src.agent.nodes.reranker_node import reranker_node
 from src.agent.nodes.rrf_node import rrf_node
 
 
+# LangSmith logging (wrap each node with while preserving its original behavior)
 def _traced_node(name: str, fn: Callable) -> Callable:
     wrapped = traceable(name=f"node.{name}", run_type="chain")(fn)
 
@@ -38,29 +40,30 @@ def _traced_node(name: str, fn: Callable) -> Callable:
 
     return sync_wrapper
 
-# Routing flow from your old file)
+# Routing flow
 def _route_input(state: JobSearchState) -> str:
     raw_query = (state.get("raw_query") or "").strip()
-    return "understand" if raw_query else "needs_input"
+    return Node.UNDERSTAND if raw_query else Node.NEEDS_INPUT
 
 def _route_understand(state: JobSearchState) -> str:
     missing = state.get("missing_slots") or []
-    return "rewrite" if not missing else "needs_input"
+    return Node.REWRITE if not missing else Node.NEEDS_INPUT
 
 def _route_search(state: JobSearchState) -> str:
     has_results = (
         bool(state.get("bm25_results"))
         or bool(state.get("vector_results"))
     )
-
-    return "rrf" if has_results else "output"
+    return Node.RRF if has_results else Node.OUTPUT
 
 def _route_rrf(state: JobSearchState) -> str:
-    return "rerank" if state.get("rrf_results") else "output"
+    return Node.RERANK if state.get("rrf_results") else Node.OUTPUT
 
 def _route_rerank(state: JobSearchState) -> str:
-    return "generate" if state.get("reranked_results") else "output"
+    return Node.GENERATE if state.get("reranked_results") else Node.OUTPUT
 
+
+# Checkpointer
 def _normalize_checkpointer(checkpointer: Any) -> Any:
     """LangGraph Platform may call build_graph(checkpointer={...}); compile() needs a saver or None."""
     if checkpointer is None or checkpointer is True or checkpointer is False:
@@ -102,34 +105,37 @@ def _sync_postgres_checkpointer_singleton():
 # Graph builder
 def build_graph(checkpointer=None):
     checkpointer = _normalize_checkpointer(checkpointer)
+    
+    # Check checkpoint when running with Langgraph CLI (by opting in via env)
     if checkpointer is None and _env_truthy("LANGGRAPH_USE_POSTGRES_CHECKPOINTER"):
         checkpointer = _sync_postgres_checkpointer_singleton()
+
     graph = StateGraph(JobSearchState)
 
     # Add nodes
-    graph.add_node("input",       _traced_node("input",       input_node))
-    graph.add_node("understand",  _traced_node("understand",  understand_node))
-    graph.add_node("rewrite",     _traced_node("rewrite",     query_rewriter_node))
-    graph.add_node("search",      _traced_node("search",      hybrid_search_node))
-    graph.add_node("rrf",         _traced_node("rrf",         rrf_node))
-    graph.add_node("rerank",      _traced_node("rerank",      reranker_node))
-    graph.add_node("generate",    _traced_node("generate",    generate_node))
-    graph.add_node("needs_input", _traced_node("needs_input", needs_input_node))
-    graph.add_node("output",      _traced_node("output",      output_node))
+    graph.add_node(Node.INPUT,       _traced_node(Node.INPUT,       input_node))
+    graph.add_node(Node.UNDERSTAND,  _traced_node(Node.UNDERSTAND,  understand_node))
+    graph.add_node(Node.REWRITE,     _traced_node(Node.REWRITE,     query_rewriter_node))
+    graph.add_node(Node.SEARCH,      _traced_node(Node.SEARCH,      hybrid_search_node))
+    graph.add_node(Node.RRF,         _traced_node(Node.RRF,         rrf_node))
+    graph.add_node(Node.RERANK,      _traced_node(Node.RERANK,      reranker_node))
+    graph.add_node(Node.GENERATE,    _traced_node(Node.GENERATE,    generate_node))
+    graph.add_node(Node.NEEDS_INPUT, _traced_node(Node.NEEDS_INPUT, needs_input_node))
+    graph.add_node(Node.OUTPUT,      _traced_node(Node.OUTPUT,      output_node))
 
-    graph.set_entry_point("input")
+    graph.set_entry_point(Node.INPUT)
 
     # Conditional edges
-    graph.add_conditional_edges("input",      _route_input)
-    graph.add_conditional_edges("understand", _route_understand)
-    graph.add_conditional_edges("search",     _route_search)
-    graph.add_conditional_edges("rrf",        _route_rrf)
-    graph.add_conditional_edges("rerank",     _route_rerank)
+    graph.add_conditional_edges(Node.INPUT,      _route_input)
+    graph.add_conditional_edges(Node.UNDERSTAND, _route_understand)
+    graph.add_conditional_edges(Node.SEARCH,     _route_search)
+    graph.add_conditional_edges(Node.RRF,        _route_rrf)
+    graph.add_conditional_edges(Node.RERANK,     _route_rerank)
 
     # Static edges
-    graph.add_edge("rewrite",     "search")
-    graph.add_edge("needs_input", "output")
-    graph.add_edge("generate",    "output")
-    graph.add_edge("output",      END)
+    graph.add_edge(Node.REWRITE,     Node.SEARCH)
+    graph.add_edge(Node.NEEDS_INPUT, Node.OUTPUT)
+    graph.add_edge(Node.GENERATE,    Node.OUTPUT)
+    graph.add_edge(Node.OUTPUT,      END)
 
     return graph.compile(checkpointer=checkpointer)

@@ -1,15 +1,23 @@
-"""
-Retrieval: BM25 (PostgreSQL tsvector) + Vector (pgvector) search.
-"""
 from __future__ import annotations
 
-from src.agent.memory import keywords_from_rewritten
+from src.agent.memory.keywords import keywords_from_rewritten
 from src.core.config import settings
 from src.core.logger import get_logger
 from src.db.client import get_pool
 from src.models.job_schema import Job
+from src.retrieval._filters import (
+    JOB_SELECT_COLUMNS,
+    TSVECTOR_SQL,
+    append_experience_conditions,
+    append_extra_filters,
+    append_location_conditions,
+    append_salary_conditions,
+    append_skills_conditions,
+    normalize_work_mode,
+)
 
 logger = get_logger(__name__)
+
 
 async def _get_embedding(text: str) -> list[float]:
     import httpx
@@ -21,8 +29,8 @@ async def _get_embedding(text: str) -> list[float]:
         )
         resp.raise_for_status()
         data = resp.json()
-        # Ollama returns {"embeddings": [[...]]}
         return data["embeddings"][0]
+
 
 async def bm25_search(
     parsed_query: dict,
@@ -36,64 +44,89 @@ async def bm25_search(
         rw_kws = keywords_from_rewritten(rw)
         if rw_kws:
             keywords = rw_kws
-    if not keywords:
+    query_text = rw or " ".join(keywords).strip()
+    if not query_text:
         logger.warning("bm25_search called with no keywords, returning empty list")
         return []
 
-    ts_query = " & ".join(keywords)
-
     conditions: list[str] = [
-        "to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'') || ' ' || coalesce(requirements,'')) @@ to_tsquery('english', $1)"
+        f"{TSVECTOR_SQL} @@ websearch_to_tsquery('public.vietnamese_unaccent', $1)"
     ]
-    params: list = [ts_query]
-    idx = 2  
+    params: list = [query_text]
+    idx = 2
 
-    if loc := parsed_query.get("location"):
-        conditions.append(f"${idx} = ANY(locations)")
-        params.append(loc)
-        idx += 1
+    idx = append_location_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
 
     if level := parsed_query.get("job_level"):
-        conditions.append(f"job_level = ${idx}")
-        params.append(level)
+        conditions.append(f"lower(coalesce(job_level, '')) = ${idx}")
+        params.append(str(level).strip().lower())
         idx += 1
 
     if mode := parsed_query.get("work_mode"):
-        conditions.append(f"work_mode = ${idx}")
-        params.append(mode)
-        idx += 1
+        norm_mode = normalize_work_mode(mode)
+        if norm_mode:
+            conditions.append(f"lower(coalesce(work_mode, '')) = ${idx}")
+            params.append(norm_mode)
+            idx += 1
 
-    if (exp := parsed_query.get("experience_years")) is not None:
-        conditions.append(f"experience_years_min <= ${idx}")
-        params.append(int(exp))
-        idx += 1
+    idx = append_experience_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
 
-    if (sal := parsed_query.get("salary_min")) is not None:
-        conditions.append(f"(salary_max IS NULL OR salary_max >= ${idx})")
-        params.append(float(sal))
-        idx += 1
+    idx = append_salary_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+        query_name="bm25_search",
+    )
+
+    idx = append_skills_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
+
+    idx = append_extra_filters(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
 
     where_clause = " AND ".join(conditions)
+    limit_idx = idx
+    params.append(int(top_k))
 
-    query = f"""
-        SELECT *, ts_rank(
-            to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'') || ' ' || coalesce(requirements,'')),
-            to_tsquery('english', $1)
-        ) AS bm25_score
-        FROM jobs
-        WHERE {where_clause}
-        ORDER BY bm25_score DESC
-        LIMIT {top_k}
-    """
+    query = (
+        f"SELECT {JOB_SELECT_COLUMNS}, "
+        "ts_rank_cd("
+        f"{TSVECTOR_SQL}, "
+        "websearch_to_tsquery('public.vietnamese_unaccent', $1)"
+        ") AS bm25_score "
+        "FROM jobs "
+        f"WHERE {where_clause} "
+        "ORDER BY bm25_score DESC, updated_at DESC "
+        f"LIMIT ${limit_idx}"
+    )
 
     pool = await get_pool()
     async with pool.acquire() as conn:
-        await conn.execute("SET search_path TO public")
         rows = await conn.fetch(query, *params)
 
     jobs = [Job.from_record(r) for r in rows]
-    logger.info(f"BM25 search returned {len(jobs)} results for keywords={keywords}")
+    logger.info("BM25 search returned %d results for query=%r", len(jobs), query_text)
     return jobs
+
 
 async def vector_search(
     parsed_query: dict,
@@ -107,7 +140,7 @@ async def vector_search(
         query_text = rw
     else:
         keyword_str = " ".join(parsed_query.get("keywords", []))
-        location_str = parsed_query.get("location", "")
+        location_str = str(parsed_query.get("location") or "")
         query_text = f"{keyword_str} {location_str}".strip()
     summary = (conversation_summary or "").strip()
     if summary:
@@ -124,41 +157,71 @@ async def vector_search(
     params: list = [vector_literal]
     idx = 2
 
+    idx = append_location_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
+
     if level := parsed_query.get("job_level"):
-        conditions.append(f"job_level = ${idx}")
-        params.append(level)
+        conditions.append(f"lower(coalesce(job_level, '')) = ${idx}")
+        params.append(str(level).strip().lower())
         idx += 1
 
     if mode := parsed_query.get("work_mode"):
-        conditions.append(f"work_mode = ${idx}")
-        params.append(mode)
-        idx += 1
+        norm_mode = normalize_work_mode(mode)
+        if norm_mode:
+            conditions.append(f"lower(coalesce(work_mode, '')) = ${idx}")
+            params.append(norm_mode)
+            idx += 1
 
-    if (exp := parsed_query.get("experience_years")) is not None:
-        conditions.append(f"experience_years_min <= ${idx}")
-        params.append(int(exp))
-        idx += 1
+    idx = append_experience_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
 
-    if (sal := parsed_query.get("salary_min")) is not None:
-        conditions.append(f"(salary_max IS NULL OR salary_max >= ${idx})")
-        params.append(float(sal))
-        idx += 1
+    idx = append_salary_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+        query_name="vector_search",
+    )
+
+    idx = append_skills_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
+
+    idx = append_extra_filters(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
 
     where_clause = " AND ".join(conditions)
+    limit_idx = idx
+    params.append(int(top_k))
 
-    query = f"""
-        SELECT *, 1 - (embedding <=> $1::vector) AS vector_score
-        FROM jobs
-        WHERE {where_clause}
-        ORDER BY embedding <=> $1::vector
-        LIMIT {top_k}
-    """
+    query = (
+        f"SELECT {JOB_SELECT_COLUMNS}, "
+        "1 - (embedding <=> $1::vector) AS vector_score "
+        "FROM jobs "
+        f"WHERE {where_clause} "
+        "ORDER BY embedding <=> $1::vector, updated_at DESC "
+        f"LIMIT ${limit_idx}"
+    )
 
     pool = await get_pool()
     async with pool.acquire() as conn:
-        await conn.execute("SET search_path TO public")
         rows = await conn.fetch(query, *params)
 
     jobs = [Job.from_record(r) for r in rows]
-    logger.info(f"Vector search returned {len(jobs)} results for: '{query_text}'")
+    logger.info("Vector search returned %d results for query=%r", len(jobs), query_text)
     return jobs
