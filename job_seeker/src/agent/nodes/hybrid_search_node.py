@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 from src.core.logger import get_logger
 from src.retrieval.search import bm25_search, vector_search
 

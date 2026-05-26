@@ -11,7 +11,7 @@ from langgraph.graph import END, StateGraph
 from langsmith import traceable
 
 from src.agent.constants import Node
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 from src.agent.nodes.understand_node import understand_node
 from src.agent.nodes.generate_node import generate_node
 from src.agent.nodes.hybrid_search_node import hybrid_search_node

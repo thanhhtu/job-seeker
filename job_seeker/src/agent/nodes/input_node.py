@@ -4,7 +4,7 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage
 
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)

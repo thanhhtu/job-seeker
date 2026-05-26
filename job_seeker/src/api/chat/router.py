@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends, Request
 from langchain_core.messages import HumanMessage
 
 from src.api.auth.deps import optional_current_user
 from src.api.errors import ErrorCode, api_error
-from src.api.chat.schemas import ChatRequest, ChatResponse
+from src.api.chat.schemas import AssistantData, ChatRequest, ChatResponse
 from src.chat_history.store import ChatHistoryStore
 from src.users.repository import UserRecord
 
@@ -54,7 +56,18 @@ async def chat(
     config = {"configurable": {"thread_id": session_id}}
 
     result = await graph.ainvoke({"messages": [HumanMessage(content=message)]}, config)
-    assistant_message = (result.get("output") or "").strip()
+    raw_output = (result.get("output") or "").strip()
+
+    data: AssistantData | None = None
+    assistant_message = raw_output
+    try:
+        parsed = json.loads(raw_output)
+        if isinstance(parsed, dict) and "type" in parsed:
+            data = AssistantData(**parsed)
+            assistant_message = data.message or data.match_summary or raw_output
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+
     if not assistant_message:
         assistant_message = "I could not generate a response. Please try again."
 
@@ -69,4 +82,5 @@ async def chat(
         session_id=session_id,
         user_message=message,
         assistant_message=assistant_message,
+        data=data,
     )

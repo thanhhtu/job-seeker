@@ -4,7 +4,7 @@ import asyncio
 import heapq
 import math
 
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 from src.core.config import settings
 from src.core.logger import get_logger
 from src.models.job_schema import Job

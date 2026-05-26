@@ -1,11 +1,4 @@
-from __future__ import annotations
-
-from typing import Annotated, Any, List, Optional, TypedDict
-
-from langchain_core.messages import AnyMessage
-from langgraph.graph.message import add_messages
-
-from src.models.job_schema import Job
+from typing import Optional, List, TypedDict
 
 
 class ParsedQuery(TypedDict, total=False):
@@ -27,19 +20,3 @@ class ParsedQuery(TypedDict, total=False):
     # Filled in understand_node 
     keywords:        List[str]            # tokens cho BM25
     filters:         dict                 # structured filters cho vector search
-
-
-class JobSearchState(TypedDict, total=False):
-    messages:             Annotated[list[AnyMessage], add_messages]
-    raw_query:            str
-    conversation_summary: str
-    parsed_query:         ParsedQuery
-    missing_slots:        List[str]
-    clarification_prompt: str          
-    rewritten_query:      str          
-    bm25_results:         List[Job]
-    vector_results:       List[Job]
-    rrf_results:          List[Job]
-    reranked_results:     List[Job]
-    generated_answer:     str
-    output:               str

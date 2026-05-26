@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.agent.constants import MissingSlot
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 
 # Response messages 
 

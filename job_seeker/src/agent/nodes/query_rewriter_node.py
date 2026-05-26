@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_mistralai import ChatMistralAI
 
 from src.agent.memory.keywords import derive_search_keywords
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 from src.core.config import settings
 from src.core.logger import get_logger
 

@@ -39,6 +39,7 @@ export function ChatPage() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const ignoreInputChange = useRef(false);
+  const skipNextHistoryFetch = useRef(false);
 
   const handleInputChange = useCallback((value: string) => {
     if (ignoreInputChange.current) {
@@ -91,6 +92,12 @@ export function ChatPage() {
     if (!urlSessionId) {
       setMessages([]);
       setLoadedSessionId(null);
+      return;
+    }
+
+    if (skipNextHistoryFetch.current) {
+      skipNextHistoryFetch.current = false;
+      setLoadedSessionId(urlSessionId);
       return;
     }
 
@@ -202,10 +209,11 @@ export function ChatPage() {
       setMessages((prev) => [
         ...prev.slice(0, -1),
         optimistic,
-        { role: "assistant", content: data.assistant_message },
+        { role: "assistant", content: data.assistant_message, data: data.data },
       ]);
       if (accessToken) {
         if (data.session_id !== currentSessionId) {
+          skipNextHistoryFetch.current = true;
           navigate(`/chat/${data.session_id}`, { replace: true });
         }
         void fetchSessions();

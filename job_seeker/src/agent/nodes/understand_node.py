@@ -12,7 +12,7 @@ from src.agent.memory.slots import (
     compute_missing_slots,
     merge_slot_memory,
 )
-from src.agent.state import JobSearchState
+from src.agent.states.state import JobSearchState
 from src.core.config import settings
 from src.core.logger import get_logger
 

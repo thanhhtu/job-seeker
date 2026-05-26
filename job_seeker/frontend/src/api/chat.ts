@@ -1,3 +1,4 @@
+import { AssistantData } from "@/types/chat";
 import { apiFetch } from "./client";
 
 export type SendMessageParams = {
@@ -10,6 +11,7 @@ export type SendMessageParams = {
 export type SendMessageResponse = {
   session_id: string;
   assistant_message: string;
+  data?: AssistantData | null;
 };
 
 export async function sendMessage(params: SendMessageParams): Promise<SendMessageResponse> {
