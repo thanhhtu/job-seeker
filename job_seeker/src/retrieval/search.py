@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from src.agent.memory.keywords import keywords_from_rewritten
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -17,6 +19,43 @@ from src.retrieval._filters import (
 )
 
 logger = get_logger(__name__)
+
+
+def _sql_literal(value: object) -> str:
+    """Render a Python value into a SQL literal for debug logs only."""
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        items = ", ".join(_sql_literal(item) for item in value)
+        return f"ARRAY[{items}]"
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def _render_sql_with_params(query: str, params: list[object]) -> str:
+    """Best-effort replacement of $1..$N placeholders for readable debug SQL."""
+    rendered = query
+    for index in range(len(params), 0, -1):
+        rendered = rendered.replace(f"${index}", _sql_literal(params[index - 1]))
+    return rendered
+
+
+def _remove_location_terms(tokens: list[str], raw_location: str) -> list[str]:
+    """Drop location words from BM25 tsquery token list."""
+    location_parts = {
+        part.casefold()
+        for part in str(raw_location or "").replace(",", " ").split()
+        if part.strip()
+    }
+    if not location_parts:
+        return tokens
+    cleaned = [tok for tok in tokens if tok.casefold() not in location_parts]
+    return cleaned
 
 
 async def _get_embedding(text: str) -> list[float]:
@@ -39,12 +78,14 @@ async def bm25_search(
     rewritten_query: str | None = None,
 ) -> list[Job]:
     keywords: list[str] = list(parsed_query.get("keywords") or [])
+    raw_location = str(parsed_query.get("location") or "").strip()
     rw = (rewritten_query or "").strip()
     if rw:
         rw_kws = keywords_from_rewritten(rw)
         if rw_kws:
             keywords = rw_kws
-    query_text = rw or " ".join(keywords).strip()
+    keywords = _remove_location_terms(keywords, raw_location)
+    query_text = " ".join(keywords).strip()
     if not query_text:
         logger.warning("bm25_search called with no keywords, returning empty list")
         return []
@@ -118,6 +159,9 @@ async def bm25_search(
         "ORDER BY bm25_score DESC, updated_at DESC "
         f"LIMIT ${limit_idx}"
     )
+
+    logger.info("BM25 SQL query: %s | params=%s", query, params)
+    logger.info("BM25 SQL rendered: %s", _render_sql_with_params(query, params))
 
     pool = await get_pool()
     async with pool.acquire() as conn:
