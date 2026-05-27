@@ -57,12 +57,15 @@ export const colors = {
     bgSuccess: 'bg-[#22c55e]',          // #22c55e  
     error: 'text-[#ef4444]',            // #ef4444  
     bgError: 'bg-[#ef4444]',            // #ef4444  
+    bgErrorHover: 'hover:bg-[#b91c1c]',  // #b91c1c
     errorBorder: 'border-[#ef4444]',    // #ef4444  
   },
 
   action: {
     icon: 'text-[#64748b]',
-    hoverEdit: 'hover:text-[#4f46e5]',
-    hoverDelete: 'hover:text-[#ef4444]',
+    hoverEdit: 'hover:text-[#b91c1c]',
+    hoverDelete: 'hover:text-[#b91c1c]',
+    textDanger: 'text-[#ef4444]',
+    hoverTextDanger: 'hover:text-[#b91c1c]',
   },
 } as const;

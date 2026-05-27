@@ -40,10 +40,16 @@ export function Sidebar({
   onNewChat,
 }: Props) {
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
-  const confirmDeleteAll = () => {
-    setShowDeleteAllConfirm(false);
-    void onDeleteAllSessions();
+  const confirmDeleteAll = async () => {
+    setIsDeletingAll(true);
+    try {
+      await onDeleteAllSessions();
+      setShowDeleteAllConfirm(false);
+    } finally {
+      setIsDeletingAll(false);
+    }
   };
 
   return (
@@ -79,7 +85,7 @@ export function Sidebar({
               <Button
                 onClick={() => setShowDeleteAllConfirm(true)}
                 variant="transparent"
-                className={`mx-10 font-semibold !p-0 ${colors.primary.text} hover:opacity-80`}
+                className={`mx-10 font-semibold !p-0 ${colors.action.textDanger} ${colors.action.hoverTextDanger}`}
               >
                 Xóa tất cả
               </Button>
@@ -152,7 +158,12 @@ export function Sidebar({
             >
               Hủy
             </Button>
-            <Button className={`!p-2.5 !px-5 ${colors.status.bgError}`} onClick={confirmDeleteAll}>
+            <Button
+              variant="destructive"
+              className="!p-2.5 !px-5"
+              isLoading={isDeletingAll}
+              onClick={() => void confirmDeleteAll()}
+            >
               Xóa tất cả
             </Button>
           </>

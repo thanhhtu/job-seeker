@@ -2,33 +2,14 @@ import { FormEvent, KeyboardEvent, useEffect, useRef } from "react";
 import { ChatMessage } from "@/types/chat";
 import { Brain, Send, Sparkles } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
-import { Button, Textarea } from "./common";
+import { Button, Spinner, Textarea } from "./common";
 import { colors } from "@/theme/colors";
 
 function TypingIndicator() {
   return (
     <div className="flex gap-3 w-full" aria-live="polite" aria-label="AI đang trả lời">
       <Sparkles className={`w-6 h-6 shrink-0 mt-1 ${colors.primary.text}`} strokeWidth={2} />
-      <>
-        <style>{`
-          @keyframes dot-bounce {
-            0%   { transform: translateY(0) scaleY(1); animation-timing-function: cubic-bezier(0.45, 0, 0.55, 0); }
-            35%  { transform: translateY(-8px) scaleY(0.97); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
-            55%  { transform: translateY(1px) scaleY(0.94); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
-            75%  { transform: translateY(0) scaleY(1); }
-            100% { transform: translateY(0) scaleY(1); }
-          }
-        `}</style>
-        <span className="inline-flex items-center gap-1">
-          {[0, 150, 300].map((delay) => (
-            <span
-              key={delay}
-              className="w-1.5 h-1.5 rounded-full bg-current"
-              style={{ animation: `dot-bounce 1.5s ${delay}ms infinite ease-in-out` }}
-            />
-          ))}
-        </span>
-      </>
+      <Spinner variant="dots" size="md" className={colors.primary.text} />
     </div>
   );
 }
@@ -114,7 +95,7 @@ export function ChatArea({ messages, input, isSending, onInputChange, onSend }: 
               disabled={!input.trim() || isSending}
             >
               {isSending ? (
-                <div className={`w-6 h-6 border-2 ${colors.basic.borderWhiteSoft} ${colors.basic.borderTopWhite} rounded-full animate-spin`} />
+                <Spinner size="md" />
               ) : (
                 <Send className="w-6 h-6" />
               )}

@@ -41,6 +41,25 @@ body {
   scrollbar-color: #cbd5e1 transparent;
 }
 
+@keyframes dot-bounce {
+  0% {
+    transform: translateY(0) scaleY(1);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 0);
+  }
+  35% {
+    transform: translateY(-8px) scaleY(0.97);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  55% {
+    transform: translateY(1px) scaleY(0.94);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  75%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
 @media (max-width: 960px) {
   .page {
     grid-template-columns: 1fr;

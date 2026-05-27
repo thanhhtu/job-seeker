@@ -37,6 +37,8 @@ export function SessionList({
   const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SessionSummary | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [isSavingRename, setIsSavingRename] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const sorted = [...sessions].sort((a, b) => {
     const ta = new Date(a.last_message_at || a.created_at).getTime();
@@ -54,7 +56,7 @@ export function SessionList({
     setRenameTarget({ id: session.session_id, title });
   };
 
-  const confirmRename = () => {
+  const confirmRename = async () => {
     if (!renameTarget) {
       return;
     }
@@ -62,16 +64,26 @@ export function SessionList({
     if (!next) {
       return;
     }
-    void onRenameSession(renameTarget.id, next);
-    setRenameTarget(null);
+    setIsSavingRename(true);
+    try {
+      await onRenameSession(renameTarget.id, next);
+      setRenameTarget(null);
+    } finally {
+      setIsSavingRename(false);
+    }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) {
       return;
     }
-    void onDeleteSession(deleteTarget.session_id);
-    setDeleteTarget(null);
+    setIsDeleting(true);
+    try {
+      await onDeleteSession(deleteTarget.session_id);
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -119,7 +131,12 @@ export function SessionList({
             <Button variant="transparent" className={`!p-2.5 !px-4 ${colors.neutral.text600}`} onClick={() => setRenameTarget(null)}>
               Hủy
             </Button>
-            <Button className="!p-2.5 !px-5" onClick={confirmRename} disabled={!draftTitle.trim()}>
+            <Button
+              className="!p-2.5 !px-5"
+              isLoading={isSavingRename}
+              onClick={() => void confirmRename()}
+              disabled={!draftTitle.trim()}
+            >
               Lưu
             </Button>
           </>
@@ -148,7 +165,12 @@ export function SessionList({
             <Button variant="transparent" className={`!p-2.5 !px-4 ${colors.neutral.text600}`} onClick={() => setDeleteTarget(null)}>
               Hủy
             </Button>
-            <Button className={`!p-2.5 !px-5 ${colors.status.bgError}`} onClick={confirmDelete}>
+            <Button
+              variant="destructive"
+              className="!p-2.5 !px-5"
+              isLoading={isDeleting}
+              onClick={() => void confirmDelete()}
+            >
               Xóa
             </Button>
           </>

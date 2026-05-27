@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ChatArea } from "@/components/ChatArea";
+import { Spinner } from "@/components/common";
 import { Sidebar } from "@/components/Sidebar";
 import {
   ApiError,
@@ -286,11 +287,7 @@ export function ChatPage() {
       <div
         className={`flex h-full w-full flex-col items-center justify-center gap-3 ${colors.page.shellBg}`}
       >
-        <div
-          className={`h-8 w-8 animate-spin rounded-full border-2 ${colors.neutral.border200} border-t-[#4f46e5]`}
-          role="status"
-          aria-label="Đang tải"
-        />
+        <Spinner size="md" colorVariant="muted" aria-label="Đang tải" />
         <p className={`inline-flex items-baseline ${colors.neutral.text500}`}>
           <span>Đang tải</span>
           <span className="inline-flex w-[1.1em] justify-start" aria-hidden>

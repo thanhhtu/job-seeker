@@ -61,10 +61,10 @@ export function AuthForm({ onLogin }: Props) {
         />
         <Button
           type="submit"
-          disabled={loading}
-          className={`w-full font-semibold py-3.5 rounded-xl shadow-lg shadow-primary-light active:scale-95 mt-1`}
+          isLoading={loading}
+          className="w-full font-semibold py-3.5 rounded-xl shadow-lg shadow-primary-light active:scale-95 mt-1"
         >
-          {loading ? "…" : mode === AuthMode.LOGIN ? "Đăng nhập" : "Đăng ký"}
+          {mode === AuthMode.LOGIN ? "Đăng nhập" : "Đăng ký"}
         </Button>
       </form>
 
