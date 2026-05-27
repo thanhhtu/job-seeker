@@ -4,11 +4,11 @@ import asyncio
 import random
 from typing import Any
 
-import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_mistralai import ChatMistralAI
 from pydantic import BaseModel, Field
 
+from src.agent.llm.retry import ainvoke_with_retry
 from src.agent.states.state import JobSearchState
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -19,15 +19,27 @@ logger = get_logger(__name__)
 _llm: ChatMistralAI | None = None
 _structured_llm: Any | None = None
 
-# Retry config
-_MAX_RETRIES   = 4
-_BASE_DELAY    = 2.0   # seconds
-_MAX_DELAY     = 30.0
-_JITTER        = 0.5   # ± seconds added to each delay
-
 # Context limits
 _MAX_JOBS      = 5     # only top-N jobs sent to LLM
 _MAX_SKILLS    = 8     # skills per job
+
+_GENERATION_SYSTEM_PROMPT = """\
+<role>
+You are a job recommendation assistant.
+</role>
+
+<task>
+Create a grounded recommendation from provided job context only.
+</task>
+
+<rules>
+- Use only facts available in CONTEXT jobs.
+- If information is missing or uncertain, state that clearly.
+- Produce user-facing Vietnamese for match_summary, recommendation reasons, and suggested_actions.
+- Prioritize relevance to the latest user intent (summary + canonical query + latest message).
+- Keep each reason specific and non-generic.
+</rules>
+"""
 
 
 # Structured output schema
@@ -95,26 +107,12 @@ def _job_context(rank: int, job: Job) -> str:
 
 
 async def _invoke_structured_with_retry(messages: list) -> GenerateResult:
-    """Call the structured-output LLM with exponential back-off on 429."""
-    delay = _BASE_DELAY
-    for attempt in range(1, _MAX_RETRIES + 1):
-        try:
-            return await _get_structured_llm().ainvoke(messages)
-
-        except httpx.HTTPStatusError as exc:
-            if exc.response.status_code != 429 or attempt == _MAX_RETRIES:
-                raise
-            jitter = random.uniform(-_JITTER, _JITTER)
-            wait = min(delay + jitter, _MAX_DELAY)
-            logger.warning(
-                "generate_node: rate-limited (attempt %d/%d). "
-                "Retrying in %.1fs …",
-                attempt, _MAX_RETRIES, wait,
-            )
-            await asyncio.sleep(wait)
-            delay *= 2
-
-    raise RuntimeError("generate_node: exhausted retries")  # unreachable
+    """Call the structured-output LLM with shared retry policy."""
+    return await ainvoke_with_retry(
+        lambda: _get_structured_llm().ainvoke(messages),
+        logger=logger,
+        operation_name="generate_node",
+    )
 
 
 def _empty_result(answer: str) -> dict:
@@ -129,7 +127,6 @@ def _empty_result(answer: str) -> dict:
 
 
 # Node
-
 async def generate_node(state: JobSearchState) -> dict:
     raw_query: str = state.get("raw_query", "").strip()
     summary: str = (state.get("conversation_summary") or "").strip()
@@ -159,19 +156,16 @@ async def generate_node(state: JobSearchState) -> dict:
 
     messages = [
         SystemMessage(content=(
-            "You are a job search assistant. "
-            "Answer ONLY from the provided CONTEXT jobs. "
-            "If information is missing, say so explicitly. "
-            "All user-facing text (match_summary, reason, suggested_actions) "
-            "MUST be written in Vietnamese."
+            _GENERATION_SYSTEM_PROMPT
         )),
         HumanMessage(content=(
             f"{user_preamble}\n\n"
             f"CONTEXT jobs:\n{context}\n\n"
-            "Respond with the following structured fields:\n"
-            "- match_summary: Brief assessment of how well results match the query\n"
-            "- recommendations: Top 3-5 jobs ranked by relevance (rank, title, company, reason)\n"
-            "- suggested_actions: 2-3 actionable next steps for the user"
+            "<output_requirements>\n"
+            "- match_summary: Brief assessment of fit quality and notable trade-offs\n"
+            "- recommendations: 3-5 jobs ranked by relevance (rank, title, company, reason)\n"
+            "- suggested_actions: 2-3 concrete next steps for the user\n"
+            "</output_requirements>"
         )),
     ]
 

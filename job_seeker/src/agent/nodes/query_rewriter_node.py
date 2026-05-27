@@ -5,6 +5,7 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_mistralai import ChatMistralAI
 
+from src.agent.llm.retry import ainvoke_with_retry
 from src.agent.memory.keywords import derive_search_keywords
 from src.agent.states.state import JobSearchState
 from src.core.config import settings
@@ -36,26 +37,31 @@ def _get_llm() -> ChatMistralAI:
 
 
 _REFINE_SYSTEM_PROMPT = """\
-You are a search-query optimisation assistant for a job search engine.
+<role>
+You are a search-query optimization assistant for a job search engine.
+</role>
 
-You will be given:
-  * conversation_summary - what the user discussed so far (multi-turn).
-  * latest_message       - the user's most recent message (may be vague
-                            with pronouns like "cái đó", "công ty kia",
-                            "tương tự").
-  * parsed_slots         - structured search slots already extracted.
-  * weak_query           - a baseline rewrite that has too little signal.
+<task>
+Resolve pronouns/references in latest_message using conversation_summary and parsed_slots.
+Then output ONE concise retrieval query suitable for keyword + vector search over job postings.
+</task>
 
-Task: resolve any pronoun / referential expression in latest_message using
-conversation_summary, then emit a single concise search query string
-(<= 50 words) suitable for keyword + vector retrieval over job postings.
+<input_fields>
+You will receive:
+- conversation_summary
+- latest_message
+- parsed_slots
+- weak_query
+</input_fields>
 
-Rules:
-  * Prefer concrete nouns: job level, technologies, location, industry.
-  * Match the input language (Vietnamese or English).
-  * Do NOT include salary or years of experience.
-  * Do NOT explain or wrap in markdown / quotes / JSON.
-  * Return ONLY the query string.
+<rules>
+- Output language must match the user's language.
+- Prefer concrete, high-signal nouns: role level, technologies, domain, location, work mode.
+- Exclude salary and years of experience from the rewritten query.
+- Keep query <= 24 tokens.
+- Do not explain, do not add labels, do not wrap with markdown/JSON/quotes.
+- Return ONLY the query string.
+</rules>
 """
 
 
@@ -138,10 +144,14 @@ async def _llm_refine_query(
         f"parsed_slots:\n{parsed_json}\n\n"
         f"weak_query:\n{weak_query}"
     )
-    response = await _get_llm().ainvoke([
-        SystemMessage(content=_REFINE_SYSTEM_PROMPT),
-        HumanMessage(content=user_content),
-    ])
+    response = await ainvoke_with_retry(
+        lambda: _get_llm().ainvoke([
+            SystemMessage(content=_REFINE_SYSTEM_PROMPT),
+            HumanMessage(content=user_content),
+        ]),
+        logger=logger,
+        operation_name="query_rewriter_node",
+    )
     return _sanitize_llm_output(getattr(response, "content", "") or "")
 
 
