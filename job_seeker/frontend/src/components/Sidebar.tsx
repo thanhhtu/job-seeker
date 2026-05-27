@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { UserInfo } from "@/types/user";
 import { SessionSummary } from "@/types/session";
 import { AuthForm } from "./AuthForm";
 import { SessionList } from "./SessionList";
 import { LogOut, Plus, Search, Settings } from "lucide-react";
-import { Button } from "./common";
+import { Button, Dialog } from "./common";
 import { AuthResponse } from "@/api";
 import { colors } from "@/theme/colors";
 
@@ -19,6 +20,7 @@ type Props = {
   onSelectSession: (id: string) => void;
   onRenameSession: (sessionId: string, title: string) => void | Promise<void>;
   onDeleteSession: (sessionId: string) => void | Promise<void>;
+  onDeleteAllSessions: () => void | Promise<void>;
   onNewChat: () => void;
 };
 
@@ -34,8 +36,16 @@ export function Sidebar({
   onSelectSession,
   onRenameSession,
   onDeleteSession,
+  onDeleteAllSessions,
   onNewChat,
 }: Props) {
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+
+  const confirmDeleteAll = () => {
+    setShowDeleteAllConfirm(false);
+    void onDeleteAllSessions();
+  };
+
   return (
     <aside className="flex flex-col h-full my-10">
       <div className="pb-4 shrink-0">
@@ -67,7 +77,7 @@ export function Sidebar({
                 Lịch sử trò chuyện
               </span>
               <Button
-                onClick={onRefreshSessions}
+                onClick={() => setShowDeleteAllConfirm(true)}
                 variant="transparent"
                 className={`mx-10 font-semibold !p-0 ${colors.primary.text} hover:opacity-80`}
               >
@@ -129,6 +139,29 @@ export function Sidebar({
           </div>
         )}
       </div>
+      <Dialog
+        open={showDeleteAllConfirm}
+        onClose={() => setShowDeleteAllConfirm(false)}
+        title="Xóa tất cả cuộc trò chuyện?"
+        footer={
+          <>
+            <Button
+              variant="transparent"
+              className={`!p-2.5 !px-4 ${colors.neutral.text600}`}
+              onClick={() => setShowDeleteAllConfirm(false)}
+            >
+              Hủy
+            </Button>
+            <Button className={`!p-2.5 !px-5 ${colors.status.bgError}`} onClick={confirmDeleteAll}>
+              Xóa tất cả
+            </Button>
+          </>
+        }
+      >
+        <p className={`text-[13px] leading-relaxed ${colors.neutral.text600}`}>
+          Bạn có chắc muốn xóa tất cả cuộc trò chuyện? Hành động này không thể hoàn tác.
+        </p>
+      </Dialog>
     </aside>
   );
 }

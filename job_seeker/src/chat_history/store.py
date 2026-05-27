@@ -129,9 +129,9 @@ class ChatHistoryStore:
                 UPDATE chat_sessions
                 SET title = $3
                 WHERE session_id = $1
-                  AND user_id = $2
-                  AND is_guest = false
-                  AND deleted_at IS NULL
+                    AND user_id = $2
+                    AND is_guest = false
+                    AND deleted_at IS NULL
                 RETURNING session_id
                 """,
                 session_id,
@@ -149,14 +149,30 @@ class ChatHistoryStore:
                 UPDATE chat_sessions
                 SET deleted_at = NOW()
                 WHERE session_id = $1
-                  AND user_id = $2
-                  AND deleted_at IS NULL
+                    AND user_id = $2
+                    AND deleted_at IS NULL
                 RETURNING session_id
                 """,
                 session_id,
                 user_id,
             )
         return row is not None
+
+    async def delete_all_sessions(self, user_id: str) -> int:
+        """Soft-delete all non-guest sessions for a user. Returns number of deleted sessions."""
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            result = await conn.execute(
+                """
+                UPDATE chat_sessions
+                SET deleted_at = NOW()
+                WHERE user_id = $1
+                    AND is_guest = false
+                    AND deleted_at IS NULL
+                """,
+                user_id,
+            )
+        return int(result.split()[-1])
 
     async def get_session_owner(self, session_id: str) -> str | None:
         pool = await get_pool()
@@ -190,8 +206,8 @@ class ChatHistoryStore:
                     ) AS message_count
                 FROM chat_sessions s
                 WHERE s.user_id = $1
-                  AND s.is_guest = false
-                  AND s.deleted_at IS NULL
+                    AND s.is_guest = false
+                    AND s.deleted_at IS NULL
                 ORDER BY s.created_at DESC
                 """,
                 user_id,

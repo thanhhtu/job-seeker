@@ -76,6 +76,19 @@ async def update_my_chat_session_title(
 
 
 @me_router.delete(
+    "/chat-sessions",
+    status_code=204,
+    summary="Delete all chat sessions",
+    description="JWT required. Soft-deletes all non-guest sessions for the current user.",
+)
+async def delete_all_my_chat_sessions(
+    user: UserRecord = Depends(get_current_user),
+) -> Response:
+    await _store.delete_all_sessions(user.id)
+    return Response(status_code=204)
+
+
+@me_router.delete(
     "/chat-sessions/{session_id}",
     status_code=204,
     summary="Delete chat session",

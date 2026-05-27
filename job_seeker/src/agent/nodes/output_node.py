@@ -41,6 +41,7 @@ def output_node(state: JobSearchState) -> dict:
     """Build structured JSON output and a text summary for conversation history."""
     reranked_results: list[Job] = state.get("reranked_results") or []
     gen = state.get("generation_result") or {}
+    referenced_jobs: list[Job] = gen.get("referenced_jobs") or []
     match_summary: str = (gen.get("match_summary") or "").strip()
     recommendations: list[dict] = gen.get("recommendations") or []
     suggested_actions: list[str] = gen.get("suggested_actions") or []
@@ -53,7 +54,7 @@ def output_node(state: JobSearchState) -> dict:
         }
         text_for_history = clarification_prompt
 
-    elif not reranked_results or not gen.get("referenced_jobs"):
+    elif not reranked_results or not referenced_jobs:
         no_result_msg = (
             "Không tìm thấy công việc phù hợp với tiêu chí của bạn. "
             "Hãy thử điều chỉnh từ khóa hoặc nới lỏng bộ lọc."
@@ -72,11 +73,11 @@ def output_node(state: JobSearchState) -> dict:
             "match_summary": match_summary,
             "recommendations": recommendations,
             "suggested_actions": suggested_actions,
-            "jobs": [_job_to_card(job) for job in gen.get("referenced_jobs")],
+            "jobs": [_job_to_card(job) for job in referenced_jobs],
         }
-        text_for_history = match_summary or f"Tìm thấy {len(gen.get("referenced_jobs"))} công việc phù hợp."
+        text_for_history = match_summary or f"Tìm thấy {len(referenced_jobs)} công việc phù hợp."
 
-    logger.info("output_node: type=%s, %d jobs", structured["type"], len(gen.get("referenced_jobs")))
+    logger.info("output_node: type=%s, %d jobs", structured["type"], len(referenced_jobs))
 
     output_json = json.dumps(structured, ensure_ascii=False)
 

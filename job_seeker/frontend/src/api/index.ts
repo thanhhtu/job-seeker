@@ -6,6 +6,7 @@ export {
   getSessionMessages,
   updateSessionTitle,
   deleteSession,
+  deleteAllSessions,
 } from "./sessions";
 
 export { sendMessage } from "./chat";

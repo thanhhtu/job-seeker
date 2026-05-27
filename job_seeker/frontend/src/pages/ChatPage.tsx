@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import {
   ApiError,
   AuthResponse,
+  deleteAllSessions,
   deleteSession,
   getSessionMessages,
   listSessions,
@@ -170,6 +171,23 @@ export function ChatPage() {
     }
   };
 
+  const handleDeleteAllSessions = async () => {
+    try {
+      await deleteAllSessions();
+      setSessions([]);
+      setMessages([]);
+      navigate("/chat");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+        return;
+      }
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+      }
+    }
+  };
+
   const handleSelectSession = (id: string) => {
     if (!accessToken) {
       return;
@@ -265,8 +283,35 @@ export function ChatPage() {
 
   if (isBootstrapping) {
     return (
-      <div className={`flex h-full w-full items-center justify-center ${colors.page.shellBg}`}>
-        <p className={colors.neutral.text500}>Đang tải…</p>
+      <div
+        className={`flex h-full w-full flex-col items-center justify-center gap-3 ${colors.page.shellBg}`}
+      >
+        <div
+          className={`h-8 w-8 animate-spin rounded-full border-2 ${colors.neutral.border200} border-t-[#4f46e5]`}
+          role="status"
+          aria-label="Đang tải"
+        />
+        <p className={`inline-flex items-baseline ${colors.neutral.text500}`}>
+          <span>Đang tải</span>
+          <span className="inline-flex w-[1.1em] justify-start" aria-hidden>
+            <style>{`
+              @keyframes loading-ellipsis {
+                0%, 60%, 100% { opacity: 0.2; }
+                30% { opacity: 1; }
+              }
+            `}</style>
+            {[0, 0.2, 0.4].map((delay) => (
+              <span
+                key={delay}
+                style={{
+                  animation: `loading-ellipsis 1.2s ${delay}s infinite ease-in-out`,
+                }}
+              >
+                .
+              </span>
+            ))}
+          </span>
+        </p>
       </div>
     );
   }
@@ -289,6 +334,7 @@ export function ChatPage() {
           onSelectSession={(id) => void handleSelectSession(id)}
           onRenameSession={handleRenameSession}
           onDeleteSession={handleDeleteSession}
+          onDeleteAllSessions={handleDeleteAllSessions}
           onNewChat={handleNewChat}
         />
       </div>

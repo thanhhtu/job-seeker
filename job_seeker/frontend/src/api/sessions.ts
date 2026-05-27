@@ -31,6 +31,12 @@ export async function deleteSession(sessionId: string): Promise<void> {
   });
 }
 
+export async function deleteAllSessions(): Promise<void> {
+  await apiFetch("/api/me/chat-sessions", {
+    method: "DELETE",
+  });
+}
+
 export async function getSessionMessages(sessionId: string): Promise<ChatMessage[]> {
   const res = await apiFetch(`/api/sessions/${sessionId}/messages`);
   const data = (await res.json()) as { messages: RawMessage[] };
