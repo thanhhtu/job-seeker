@@ -5,6 +5,7 @@ from typing import Any
 
 from src.agent.constants import MissingSlot
 from src.agent.memory.keywords import enrich_parsed_query_for_retrieval
+from src.retrieval._filters import normalize_work_modes
 
 
 CLEAR_SLOT_SENTINEL = "__CLEAR__"
@@ -56,7 +57,7 @@ def _has_location_with_filter(p: dict[str, Any]) -> bool:
         return False
     return (
         bool(str(p.get("job_level") or "").strip())
-        or bool(str(p.get("work_mode") or "").strip())
+        or bool(normalize_work_modes(p.get("work_mode")))
         or p.get("candidate_experience_years") is not None
         or p.get("job_experience_min") is not None
         or p.get("job_experience_max") is not None

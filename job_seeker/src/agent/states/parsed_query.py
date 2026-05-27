@@ -3,7 +3,7 @@ from typing import Optional, List, TypedDict
 
 class ParsedQuery(TypedDict, total=False):
     location:                   Optional[str]        
-    work_mode:                  Optional[str]
+    work_mode:                  List[str]
     skills:                     List[str]            
     salary_min:                 Optional[int]        
     salary_max:                 Optional[int]

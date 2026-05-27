@@ -7,6 +7,7 @@ from langchain_core.messages import SystemMessage
 from langchain_mistralai import ChatMistralAI
 
 from src.agent.llm.retry import ainvoke_with_retry
+from src.retrieval._filters import normalize_work_modes
 from src.agent.memory.keywords import enrich_parsed_query_for_retrieval
 from src.agent.memory.slots import (
     CLEAR_SLOT_SENTINEL,
@@ -31,7 +32,6 @@ _SLOT_KEY_ALIASES = {
 _SCALAR_STRING_SLOTS = frozenset(
     {
         "location",
-        "work_mode",
         "salary_currency",
         "job_level",
     }
@@ -68,7 +68,7 @@ _MERGEABLE_SLOT_KEYS = (
     _SCALAR_STRING_SLOTS
     | _LIST_STRING_SLOTS
     | _NUMERIC_SLOTS
-    | frozenset({"filters"})
+    | frozenset({"filters", "work_mode"})
 )
 
 _TRANSIENT_SLOT_KEYS = frozenset({"salary_period"})
@@ -187,7 +187,7 @@ Return ONLY valid JSON (no markdown, no extra text) with EXACTLY this top-level 
   "conversation_summary": "<string>",
   "slots": {{
     "location": "...",
-    "work_mode": "...",
+    "work_mode": ["hybrid", "remote"],
     "skills": ["..."],
     "keywords": ["..."],
     "salary_min": <number>,
@@ -236,6 +236,7 @@ Return ONLY valid JSON (no markdown, no extra text) with EXACTLY this top-level 
   2) job_experience_min/max = required years in job posting.
   3) Ambiguous range can include both candidate and job slots.
 - skills: normalized tech/framework names, conventional English casing.
+- work_mode: ordered array of canonical tokens hybrid|remote|onsite (first = highest preference).
 - job_domains: lowercase English domain tokens.
 - must_include_keywords / must_exclude_keywords: short lowercase hard filters.
 - soft_preferences: non-deterministic culture/vibe preferences.
@@ -433,6 +434,24 @@ def _normalize_numeric(canon: str, value: object) -> int | float | None:
     return num
 
 
+def _normalize_work_mode_slot(value: object) -> object | None:
+    """Normalize work_mode to an ordered list of hybrid|remote|onsite."""
+    if _is_clear_token(value):
+        return CLEAR_SLOT_SENTINEL
+
+    modes = normalize_work_modes(value)
+    if modes:
+        return modes
+
+    if isinstance(value, list):
+        logger.info(
+            "understand_node: ignored empty work_mode list (no valid modes, no __CLEAR__)"
+        )
+    else:
+        logger.info("understand_node: dropped unknown work_mode=%r", value)
+    return None
+
+
 def _normalize_salary_period(value: object) -> str | None:
     """Resolve salary_period to a canonical value (monthly/yearly/...)."""
     if isinstance(value, list):
@@ -473,6 +492,12 @@ def _normalize_slots(raw: dict) -> dict:
 
         if canon == "salary_period":
             normalized = _normalize_salary_period(value)
+            if normalized is not None:
+                out[canon] = normalized
+            continue
+
+        if canon == "work_mode":
+            normalized = _normalize_work_mode_slot(value)
             if normalized is not None:
                 out[canon] = normalized
             continue

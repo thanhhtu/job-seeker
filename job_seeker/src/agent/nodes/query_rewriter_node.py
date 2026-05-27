@@ -7,15 +7,13 @@ from langchain_mistralai import ChatMistralAI
 
 from src.agent.llm.retry import ainvoke_with_retry
 from src.agent.memory.keywords import derive_search_keywords
+from src.retrieval._filters import normalize_work_modes
 from src.agent.states.state import JobSearchState
 from src.core.config import settings
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-
-# Query rewrite configuration
-_CONTEXT_SLOTS: tuple[str, ...] = ("location", "work_mode")
 
 # Hybrid fallback configuration.
 _WEAK_SIGNAL_TOKEN_THRESHOLD = 3
@@ -98,9 +96,10 @@ def build_rewritten_query(parsed_query: dict, raw_query: str = "") -> str:
 
     parts.extend(derive_search_keywords(parsed))
 
-    for key in _CONTEXT_SLOTS:
-        if val := _slot_str(parsed, key):
-            parts.append(val)
+    if location := _slot_str(parsed, "location"):
+        parts.append(location)
+
+    parts.extend(normalize_work_modes(parsed.get("work_mode")))
 
     rewritten = " ".join(_dedup_phrases_keep_order(parts)).strip()
     return rewritten or (raw_query or "").strip()

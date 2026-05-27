@@ -196,6 +196,62 @@ def normalize_work_mode(value: object) -> str:
     return ""
 
 
+def normalize_work_modes(value: object) -> list[str]:
+    """Ordered unique canonical work modes (first item = highest preference)."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        raw_items = [value]
+    elif isinstance(value, list):
+        raw_items = value
+    else:
+        raw_items = [value]
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for raw in raw_items:
+        norm = normalize_work_mode(raw)
+        if norm and norm not in seen:
+            seen.add(norm)
+            out.append(norm)
+    return out
+
+
+def work_mode_priority_order_sql(
+    modes: list[str],
+    *,
+    column: str = "lower(coalesce(work_mode, ''))",
+) -> str:
+    """SQL CASE expression: lower index = higher user preference."""
+    if not modes:
+        return "0"
+    whens = " ".join(
+        f"WHEN {column} = '{mode}' THEN {index}" for index, mode in enumerate(modes)
+    )
+    return f"CASE {whens} ELSE {len(modes)} END"
+
+
+def append_work_mode_conditions(
+    *,
+    parsed_query: dict,
+    conditions: list[str],
+    params: list,
+    idx: int,
+) -> int:
+    modes = normalize_work_modes(parsed_query.get("work_mode"))
+    if not modes:
+        return idx
+
+    if len(modes) == 1:
+        conditions.append(f"lower(coalesce(work_mode, '')) = ${idx}")
+        params.append(modes[0])
+    else:
+        conditions.append(f"lower(coalesce(work_mode, '')) = ANY(${idx}::text[])")
+        params.append(modes)
+    idx += 1
+    return idx
+
+
 # SQL condition builders
 def append_location_conditions(
     *,
@@ -223,6 +279,62 @@ def append_location_conditions(
     return idx
 
 
+def _skill_match_clause(idx: int, skill: str) -> str:
+    return (
+        f"EXISTS (SELECT 1 FROM unnest(skills) s WHERE lower(s) LIKE ${idx}) "
+        f"OR {TEXT_SEARCH_BLOB_SQL} LIKE ${idx}"
+    )
+
+
+def _domain_match_clause(idx: int) -> str:
+    """Soft domain match: array overlap, partial industry, or text blob."""
+    return (
+        "("
+        f"job_domains && ${idx}::text[] "
+        "OR EXISTS ("
+        f"SELECT 1 FROM unnest(company_industry) ci, unnest(${idx}::text[]) d "
+        f"WHERE lower(ci) LIKE '%' || d || '%'"
+        ") "
+        "OR EXISTS ("
+        f"SELECT 1 FROM unnest(${idx}::text[]) d "
+        f"WHERE {TEXT_SEARCH_BLOB_SQL} LIKE '%' || d || '%'"
+        ")"
+        ")"
+    )
+
+
+def append_skills_and_domains_conditions(
+    *,
+    parsed_query: dict,
+    conditions: list[str],
+    params: list,
+    idx: int,
+) -> int:
+    """Skills/domain fit filter — relaxed OR semantics when multiple signals exist."""
+    skills = clean_phrases(parsed_query.get("skills"))
+    job_domains = clean_phrases(parsed_query.get("job_domains"))
+
+    fit_parts: list[str] = []
+    for skill in skills:
+        fit_parts.append(f"({_skill_match_clause(idx, skill)})")
+        params.append(f"%{skill}%")
+        idx += 1
+
+    if job_domains:
+        fit_parts.append(_domain_match_clause(idx))
+        params.append(job_domains)
+        idx += 1
+
+    if not fit_parts:
+        return idx
+
+    if len(fit_parts) == 1:
+        conditions.append(fit_parts[0])
+    else:
+        conditions.append("(" + " OR ".join(fit_parts) + ")")
+    return idx
+
+
 def append_skills_conditions(
     *,
     parsed_query: dict,
@@ -230,14 +342,13 @@ def append_skills_conditions(
     params: list,
     idx: int,
 ) -> int:
-    skills = clean_phrases(parsed_query.get("skills"))
-    for skill in skills:
-        conditions.append(
-            f"EXISTS (SELECT 1 FROM unnest(skills) s WHERE lower(s) LIKE ${idx})"
-        )
-        params.append(f"%{skill}%")
-        idx += 1
-    return idx
+    """Backward-compatible wrapper; prefer append_skills_and_domains_conditions."""
+    return append_skills_and_domains_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
 
 
 def append_industry_conditions(
@@ -247,19 +358,12 @@ def append_industry_conditions(
     params: list,
     idx: int,
 ) -> int:
-    """Filter by job/company domains. job_domains uses GIN overlap for speed."""
+    """Domain-only filter (soft). Used when skills are absent."""
     job_domains = clean_phrases(parsed_query.get("job_domains"))
     if not job_domains:
         return idx
 
-    conditions.append(
-        "("
-        f"job_domains && ${idx}::text[] "
-        "OR EXISTS ("
-        f"SELECT 1 FROM unnest(company_industry) ci WHERE lower(ci) = ANY(${idx}::text[])"
-        ")"
-        ")"
-    )
+    conditions.append(_domain_match_clause(idx))
     params.append(job_domains)
     idx += 1
     return idx
@@ -291,9 +395,7 @@ def append_extra_filters(
     params: list,
     idx: int,
 ) -> int:
-    idx = append_industry_conditions(
-        parsed_query=parsed_query, conditions=conditions, params=params, idx=idx
-    )
+    # job_domains handled with skills in append_skills_and_domains_conditions
     idx = append_keyword_match_conditions(
         parsed_query=parsed_query,
         conditions=conditions,
