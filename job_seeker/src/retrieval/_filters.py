@@ -342,13 +342,23 @@ def append_skills_conditions(
     params: list,
     idx: int,
 ) -> int:
-    """Backward-compatible wrapper; prefer append_skills_and_domains_conditions."""
-    return append_skills_and_domains_conditions(
-        parsed_query=parsed_query,
-        conditions=conditions,
-        params=params,
-        idx=idx,
-    )
+    """Apply skill filters; only one skill match is required."""
+    skills = clean_phrases(parsed_query.get("skills"))
+    skill_parts: list[str] = []
+    for skill in skills:
+        skill_parts.append(
+            "("
+            f"EXISTS (SELECT 1 FROM unnest(skills) s WHERE lower(s) LIKE ${idx}) "
+            f"OR lower(coalesce(description, '')) LIKE ${idx} "
+            f"OR lower(coalesce(requirements, '')) LIKE ${idx}"
+            ")"
+        )
+        params.append(f"%{skill}%")
+        idx += 1
+
+    if skill_parts:
+        conditions.append("(" + " OR ".join(skill_parts) + ")")
+    return idx
 
 
 def append_industry_conditions(
@@ -395,7 +405,12 @@ def append_extra_filters(
     params: list,
     idx: int,
 ) -> int:
-    # job_domains handled with skills in append_skills_and_domains_conditions
+    idx = append_industry_conditions(
+        parsed_query=parsed_query,
+        conditions=conditions,
+        params=params,
+        idx=idx,
+    )
     idx = append_keyword_match_conditions(
         parsed_query=parsed_query,
         conditions=conditions,

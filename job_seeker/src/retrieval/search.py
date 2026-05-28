@@ -12,7 +12,7 @@ from src.retrieval._filters import (
     append_extra_filters,
     append_location_conditions,
     append_salary_conditions,
-    append_skills_and_domains_conditions,
+    append_skills_conditions,
     append_work_mode_conditions,
     normalize_work_modes,
     work_mode_priority_order_sql,
@@ -130,7 +130,7 @@ async def bm25_search(
         query_name="bm25_search",
     )
 
-    idx = append_skills_and_domains_conditions(
+    idx = append_skills_conditions(
         parsed_query=parsed_query,
         conditions=conditions,
         params=params,
@@ -244,7 +244,7 @@ async def vector_search(
         query_name="vector_search",
     )
 
-    idx = append_skills_and_domains_conditions(
+    idx = append_skills_conditions(
         parsed_query=parsed_query,
         conditions=conditions,
         params=params,
