@@ -1,7 +1,7 @@
 import { AssistantData } from "@/types/chat";
 import { JobCard } from "@/components/JobCard";
 import { CopyButton, useCopy } from "@/components/CopyButton";
-import { renderInlineBold } from "@/utils/renderInlineBold";
+import { renderInlineBold, stripInlineBoldMarkers } from "@/utils/renderInlineBold";
 import { Briefcase, ChevronRight, Sparkles, Star } from "lucide-react";
 import { colors } from "@/theme/colors";
 
@@ -73,14 +73,17 @@ export function StructuredMessage({ data }: { data: AssistantData }) {
 
         {actions.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {actions.map((action) => (
-              <span
-                key={action}
-                className="px-3 py-1.5 rounded-full bg-[#f1f5f9] text-[12px] text-[#475569] font-medium"
-              >
-                {action}
-              </span>
-            ))}
+            {actions.map((action) => {
+              const label = stripInlineBoldMarkers(action);
+              return (
+                <span
+                  key={action}
+                  className="px-4 py-2 rounded-3xl bg-[#f1f5f9] text-[12px] text-[#475569] font-medium"
+                >
+                  {label}
+                </span>
+              );
+            })}
           </div>
         )}
 
