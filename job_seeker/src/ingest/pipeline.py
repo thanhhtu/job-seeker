@@ -3,7 +3,7 @@ from pathlib import Path
 
 from src.ingest.json_loader import load_jobs_from_dir, load_jobs_from_file
 from src.ingest.embed import embed_jobs
-from src.db.repository import upsert_jobs
+from src.db.repositories.job_repository import upsert_jobs
 from src.db.client import close_pool
 from src.core.logger import get_logger
 

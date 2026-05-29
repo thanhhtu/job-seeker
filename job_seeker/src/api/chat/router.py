@@ -8,11 +8,14 @@ from langchain_core.messages import HumanMessage
 from src.api.auth.deps import optional_current_user
 from src.api.errors import ErrorCode, api_error
 from src.api.chat.schemas import AssistantData, ChatRequest, ChatResponse
-from src.chat_history.store import ChatHistoryStore
-from src.users.repository import UserRecord
+from src.db.repositories.chat_repository import (
+    add_chat_message,
+    ensure_chat_session,
+    set_chat_session_title_if_empty,
+)
+from src.db.repositories.user_repository import UserRecord
 
 router = APIRouter(prefix="/api", tags=["chat"])
-_store = ChatHistoryStore()
 
 
 @router.post(
@@ -43,7 +46,7 @@ async def chat(
         effective_user_id = (payload.user_id or "anonymous").strip() or "anonymous"
 
     try:
-        session_id = await _store.ensure_session(
+        session_id = await ensure_chat_session(
             effective_user_id,
             payload.session_id,
             is_guest=auth_user is None,
@@ -72,9 +75,9 @@ async def chat(
         assistant_message = "I could not generate a response. Please try again."
 
     if auth_user is not None:
-        await _store.add_message(session_id=session_id, role="user", content=message)
-        await _store.set_session_title_if_empty(session_id, message)
-        await _store.add_message(
+        await add_chat_message(session_id=session_id, role="user", content=message)
+        await set_chat_session_title_if_empty(session_id, message)
+        await add_chat_message(
             session_id=session_id,
             role="assistant",
             content=assistant_message,

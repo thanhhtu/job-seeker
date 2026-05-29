@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.api.auth.jwt_tokens import decode_access_token
 from src.api.errors import ErrorCode, api_error
-from src.users.repository import UserRecord, get_user_by_id
+from src.db.repositories.user_repository import UserRecord, get_user_by_id
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

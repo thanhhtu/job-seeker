@@ -10,12 +10,18 @@ from src.api.sessions.schemas import (
     ChatSessionSummary,
     UpdateSessionTitleRequest,
 )
-from src.chat_history.store import ChatHistoryStore
-from src.users.repository import UserRecord
+from src.db.repositories.chat_repository import (
+    delete_all_chat_sessions,
+    delete_chat_session,
+    get_chat_messages,
+    get_chat_session_owner,
+    list_chat_sessions_for_user,
+    update_chat_session_title,
+)
+from src.db.repositories.user_repository import UserRecord
 
 router = APIRouter(prefix="/api/sessions", tags=["history"])
 me_router = APIRouter(prefix="/api/me", tags=["me"])
-_store = ChatHistoryStore()
 
 
 @me_router.get(
@@ -27,14 +33,14 @@ _store = ChatHistoryStore()
 async def list_my_chat_sessions(
     user: UserRecord = Depends(get_current_user),
 ) -> list[ChatSessionSummary]:
-    rows = await _store.list_sessions_for_user(user.id)
+    rows = await list_chat_sessions_for_user(user.id)
     return [
         ChatSessionSummary(
-            session_id=r["session_id"],
-            title=r.get("title"),
-            created_at=r["created_at"],
-            last_message_at=r["last_message_at"],
-            message_count=int(r["message_count"]),
+            session_id=r.session_id,
+            title=r.title,
+            created_at=r.created_at,
+            last_message_at=r.last_message_at,
+            message_count=r.message_count,
         )
         for r in rows
     ]
@@ -51,27 +57,27 @@ async def update_my_chat_session_title(
     payload: UpdateSessionTitleRequest,
     user: UserRecord = Depends(get_current_user),
 ) -> ChatSessionSummary:
-    owner = await _store.get_session_owner(session_id)
+    owner = await get_chat_session_owner(session_id)
     if owner is None:
         raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
     if owner != user.id:
         raise api_error(403, ErrorCode.SESSION_ACCESS_DENIED)
 
-    updated = await _store.update_session_title(session_id, user.id, payload.title)
+    updated = await update_chat_session_title(session_id, user.id, payload.title)
     if not updated:
         raise api_error(400, ErrorCode.TITLE_EMPTY)
 
-    rows = await _store.list_sessions_for_user(user.id)
-    row = next((r for r in rows if r["session_id"] == session_id), None)
+    rows = await list_chat_sessions_for_user(user.id)
+    row = next((r for r in rows if r.session_id == session_id), None)
     if row is None:
         raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
 
     return ChatSessionSummary(
-        session_id=row["session_id"],
-        title=row.get("title"),
-        created_at=row["created_at"],
-        last_message_at=row["last_message_at"],
-        message_count=int(row["message_count"]),
+        session_id=row.session_id,
+        title=row.title,
+        created_at=row.created_at,
+        last_message_at=row.last_message_at,
+        message_count=row.message_count,
     )
 
 
@@ -84,7 +90,7 @@ async def update_my_chat_session_title(
 async def delete_all_my_chat_sessions(
     user: UserRecord = Depends(get_current_user),
 ) -> Response:
-    await _store.delete_all_sessions(user.id)
+    await delete_all_chat_sessions(user.id)
     return Response(status_code=204)
 
 
@@ -101,13 +107,13 @@ async def delete_my_chat_session(
     session_id: str,
     user: UserRecord = Depends(get_current_user),
 ) -> Response:
-    owner = await _store.get_session_owner(session_id)
+    owner = await get_chat_session_owner(session_id)
     if owner is None:
         raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
     if owner != user.id:
         raise api_error(403, ErrorCode.SESSION_ACCESS_DENIED)
 
-    deleted = await _store.delete_session(session_id, user.id)
+    deleted = await delete_chat_session(session_id, user.id)
     if not deleted:
         raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
 
@@ -127,19 +133,19 @@ async def get_session_messages(
     session_id: str,
     user: UserRecord = Depends(get_current_user),
 ) -> ChatHistoryResponse:
-    owner = await _store.get_session_owner(session_id)
+    owner = await get_chat_session_owner(session_id)
     if owner is None:
         raise api_error(404, ErrorCode.SESSION_NOT_FOUND)
     if owner != user.id:
         raise api_error(403, ErrorCode.SESSION_ACCESS_DENIED)
 
-    rows = await _store.get_messages(session_id)
+    rows = await get_chat_messages(session_id)
     messages = [
         ChatMessage(
-            role=row["role"],
-            content=row["content"],
-            data=row.get("data"),
-            created_at=row["created_at"],
+            role=row.role,
+            content=row.content,
+            data=row.data,
+            created_at=row.created_at,
         )
         for row in rows
     ]

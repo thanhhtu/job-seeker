@@ -19,7 +19,12 @@ from src.api.auth.schemas import (
     UserPublic,
     UserRegister,
 )
-from src.users.repository import UserRecord, create_user, get_user_by_email, get_user_by_id
+from src.db.repositories.user_repository import (
+    UserRecord,
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 

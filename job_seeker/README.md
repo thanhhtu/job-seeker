@@ -22,52 +22,81 @@ An agent for job search and Q&A, built with **LangGraph**, **Mistral AI**, **Oll
 
 ```text
 job_seeker/
-├── frontend/                 # React + Vite web chat UI
+├── frontend/                      # React + Vite web chat UI
+│   ├── public/
 │   ├── src/
-│   └── package.json
-├── src/
-│   ├── agent/               # LangGraph state machine
-│   │   ├── graph.py         # Graph definition and routing
-│   │   ├── nodes/           
-│   │   └── state.py         # AgentState schema
-│   ├── api/                 # FastAPI backend
-│   │   ├── app.py
-│   │   ├── auth_router.py   # Register / login / me / chat-sessions
-│   │   ├── deps.py          # JWT Bearer dependencies
-│   │   ├── openapi_meta.py  # OpenAPI / Swagger tag descriptions
-│   │   └── schemas.py
-│   ├── auth/                # JWT + bcrypt
-│   ├── users/               # `users` table repository
-│   ├── chat_history/         # Chat history store (PostgreSQL)
-│   │   └── store.py
-│   ├── core/
-│   │   ├── config.py         # Environment config (pydantic-settings)
-│   │   ├── logger.py         # Shared logger
-│   │   └── tracing.py        # LangSmith tracing helper
-│   ├── db/
-│   │   ├── client.py         # Initialize and manage the asyncpg connection pool. Provides PostgreSQL connection interfaces.
-│   │   ├── repository.py     # Job search query functions
-│   ├── ingest/
-│   │   ├── embed.py          # Generate vector embeddings via Ollama (bge-m3)
-│   │   ├── json_loader.py    # Load and parse raw data from JSON
-│   │   └── pipeline.py       # Orchestrate ingest flow
-│   ├── models/
-│   │   └── job_schema.py     # Standard schema for job data
-│   └── retrieval/            # Hybrid search + rerank
-│       ├── reranker.py
-│       └── search.py
+│   │   ├── api/                   
+│   │   ├── components/            
+│   │   ├── hooks/
+│   │   ├── pages/                
+│   │   ├── types/
+│   │   └── utils/
+│   ├── package.json
+│   └── vite.config.ts
 │
-├── crawler/                 # Crawl data from multiple sources
-│   ├── data_job/
+├── src/
+│   ├── agent/                     # LangGraph state machine
+│   │   ├── graph.py               # Graph definition and routing
+│   │   ├── constants.py
+│   │   ├── llm/                   # LLM retry helpers
+│   │   ├── memory/                # Slots, keywords
+│   │   ├── nodes/                 
+│   │   └── states/                # AgentState
+│   ├── api/                       # FastAPI backend
+│   │   ├── app.py                 # App factory, lifespan, routers
+│   │   ├── errors.py
+│   │   ├── openapi_meta.py
+│   │   ├── auth/                  # Register / login / JWT / passwords
+│   │   │   ├── router.py
+│   │   │   ├── deps.py
+│   │   │   ├── jwt_tokens.py
+│   │   │   ├── passwords.py
+│   │   │   └── schemas.py
+│   │   ├── chat/                  # Chat stream endpoint
+│   │   │   ├── router.py
+│   │   │   └── schemas.py
+│   │   └── sessions/              # Chat sessions CRUD
+│   │       ├── router.py
+│   │       └── schemas.py
+│   ├── core/
+│   │   ├── config.py              # pydantic-settings
+│   │   ├── logger.py
+│   │   └── tracing.py             # LangSmith
+│   ├── db/
+│   │   ├── client.py              # asyncpg pool
+│   │   ├── langgraph_checkpoint.py
+│   │   └── repositories/
+│   │       ├── chat_repository.py # chat_sessions / chat_messages
+│   │       ├── job_repository.py  # jobs upsert
+│   │       └── user_repository.py
+│   ├── ingest/
+│   │   ├── embed.py               # Ollama bge-m3 embeddings
+│   │   ├── json_loader.py
+│   │   └── pipeline.py
+│   ├── models/
+│   │   └── job_schema.py
+│   └── retrieval/                 # Hybrid search + rerank
+│       ├── search.py
+│       ├── reranker.py
+│       └── _filters.py
+│
+├── crawler/                       # Job crawlers
+│   ├── data_job/                  # JSON output + schemas
 │   ├── itviec/
 │   └── topcv/
 │
-├── docker/                  # Dockerfiles for services
-├── migrations/              # Alembic migrations
-├── scripts/                 # Helper scripts
+├── docker/
+│   ├── postgres/
+│   ├── embedding/                 
+│   └── reranker/
+│
+├── migrations/                    # Alembic (versions/)
+├── scripts/
+│   └── ingest.py
+│
 ├── alembic.ini
-├── compose.yaml             # Docker Compose (PostgreSQL + pgvector)
-├── langgraph.json           # LangGraph Server config
+├── compose.yaml
+├── langgraph.json
 ├── pyproject.toml
 └── uv.lock
 ```
@@ -213,7 +242,7 @@ Full architecture with React FE + FastAPI BE + LangGraph:
 |--------------------------|-------------------------------|
 | LangGraph (brain)        | `src/agent/graph.py`          |
 | Backend API (FastAPI)    | `src/api/app.py`              |
-| Chat history (PostgreSQL)| `src/chat_history/store.py`   |
+| Chat history (PostgreSQL)| `src/db/repositories/chat_repository.py` |
 | Frontend (React + Vite)  | `frontend/src/App.tsx`         |
 
 ### Run backend

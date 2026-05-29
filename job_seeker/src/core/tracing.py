@@ -1,4 +1,3 @@
-# src/core/tracing.py
 from __future__ import annotations
 
 import logging
@@ -17,13 +16,11 @@ def _first_non_empty(*values: str | None) -> str:
 
 
 def setup_langsmith_tracing() -> None:
-    """Set LangSmith env vars. Gọi TRƯỚC khi import LangChain/LangGraph."""
-
+    """Set LangSmith environment variables. Call this BEFORE importing LangChain/LangGraph."""
     api_key = _first_non_empty(settings.langsmith_api_key)
     tracing_enabled = bool(settings.langsmith_tracing) and bool(api_key)
     project = _first_non_empty(settings.langsmith_project, "job-seeker")
 
-    # Nếu không có API key thì tắt luôn, tránh lỗi âm thầm
     if not api_key and settings.langsmith_tracing:
         logger.warning(
             "LangSmith tracing được bật nhưng thiếu LANGSMITH_API_KEY — tắt tracing."
@@ -35,7 +32,7 @@ def setup_langsmith_tracing() -> None:
     if api_key:
         os.environ["LANGSMITH_API_KEY"] = api_key
 
-    # Tuỳ chọn: endpoint cho self-hosted hoặc EU
+    # Optional: endpoint for self-hosted or EU
     endpoint = _first_non_empty(
         getattr(settings, "langsmith_endpoint", ""),
         "https://api.smith.langchain.com",
