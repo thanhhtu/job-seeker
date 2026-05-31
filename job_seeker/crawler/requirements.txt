@@ -1,0 +1,4 @@
+# Crawler dependencies — installed via pyproject.toml with uv
+#   uv sync --group crawler
+# Or from this directory:
+#   uv sync --directory .. --group crawler

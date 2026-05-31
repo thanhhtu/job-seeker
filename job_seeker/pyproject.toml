@@ -27,3 +27,13 @@ dependencies = [
     "psycopg[binary,pool]>=3.3.4",
     "pyjwt>=2.10.0",
 ]
+
+[dependency-groups]
+crawler = [
+    "beautifulsoup4>=4.12.0",
+    "dbos>=1.5.0",
+    "dbos-argus>=0.0.26",
+    "lxml>=5.2.0",
+    "psycopg2-binary>=2.9.0",
+    "sqlalchemy>=2.0.0",
+]

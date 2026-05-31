@@ -108,16 +108,27 @@ class Job:
         def _int(val) -> int | None:
             if val is None:
                 return None
+            if isinstance(val, str):
+                import re
+                m = re.search(r"\d+", val)
+                return int(m.group()) if m else None
             return int(val)
 
         def _date(val) -> date | None:
             if not val:
                 return None
-            return date.fromisoformat(val[:10])
+            text = str(val).strip()
+            if "/" in text:
+                parts = text.split("/")
+                if len(parts) == 3:
+                    return date(int(parts[2]), int(parts[1]), int(parts[0]))
+            return date.fromisoformat(text[:10])
 
         def _datetime(val) -> datetime | None:
             if not val:
                 return None
+            if isinstance(val, (int, float)):
+                return datetime.fromtimestamp(val / 1000)
             text = str(val).strip()
             if text.endswith("Z"):
                 text = text[:-1] + "+00:00"
@@ -157,7 +168,7 @@ class Job:
             work_mode_days=data.get("work_mode_days"),
             overtime_policy=data.get("overtime_policy"),
             benefits=data.get("benefits"),
-            hiring_quantity=data.get("hiring_quantity"),
+            hiring_quantity=_int(data.get("hiring_quantity")),
             salary_negotiable=bool(data.get("salary_negotiable")),
             crawled_date=_datetime(data.get("crawled_date")),
         )
