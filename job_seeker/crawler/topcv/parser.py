@@ -45,6 +45,27 @@ def css_text(soup: BeautifulSoup, selector: str) -> Optional[str]:
     return el.get_text(separator="\n", strip=True) or None
 
 
+def css_attr(soup: BeautifulSoup, selector: str, attr_name: str) -> Optional[str]:
+    el = soup.select_one(selector)
+    if not el:
+        return None
+    value = el.get(attr_name)
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def to_absolute_url(raw_url: str) -> Optional[str]:
+    if not raw_url:
+        return None
+    return raw_url if raw_url.startswith("http") else f"{SITE_URL}{raw_url}"
+
+
+def get_id_from_url(url: str) -> Optional[str]:
+    if not url:
+        return None
+    path_parts = urlparse(url).path.rstrip("/").split("/")
+    return path_parts[-1].replace(".html", "") if path_parts else None
+
+
 def css_texts(soup: BeautifulSoup, selector: str) -> list[str]:
     return [
         el.get_text(strip=True)
@@ -102,17 +123,21 @@ def extract_job_list_data(soup: BeautifulSoup) -> list[dict]:
                     or title_link.get_text(strip=True)
                 )
                 raw_url = title_link.get("href", "")
-                job["url"] = raw_url if raw_url.startswith("http") else f"{SITE_URL}{raw_url}"
-
-                path_parts = urlparse(job["url"]).path.rstrip("/").split("/")
-                job["job_id"] = path_parts[-1].replace(".html", "") if path_parts else None
+                job["url"] = to_absolute_url(raw_url)
+                job["job_id"] = get_id_from_url(job["url"]) if job.get("url") else None
 
             job_id_attr = card.get("data-job-id")
             if job_id_attr:
                 job["job_id"] = job_id_attr
 
             company_el = card.select_one(LIST_SELECTORS["company"])
+            company_anchor = card.select_one("a.company")
             job["company"] = company_el.get_text(strip=True) if company_el else None
+
+            company_href = company_anchor.get("href", "") if company_anchor else ""
+            if company_href:
+                job["company_url"] = to_absolute_url(company_href)
+                job["company_id"] = get_id_from_url(job["company_url"])
 
             salary_el = card.select_one(LIST_SELECTORS["salary"])
             if salary_el:
@@ -150,6 +175,10 @@ def extract_job_detail_data(soup: BeautifulSoup, job_url: str) -> dict:
     detail["detail_benefit"]   = css_text(soup, DETAIL_SELECTORS["detail_benefit"])
     detail["other_benefits"]   = css_texts(soup, DETAIL_SELECTORS["other_benefits"]) or None
     detail["company_name"]     = css_text(soup, DETAIL_SELECTORS["company_name"])
+    detail["company_url"]      = to_absolute_url(
+        css_attr(soup, DETAIL_SELECTORS["company_name"], "href") or ""
+    )
+    detail["company_id"]       = get_id_from_url(detail["company_url"])
     detail["company_size"]     = css_text(soup, DETAIL_SELECTORS["company_size"])
     detail["company_industry"] = css_text(soup, DETAIL_SELECTORS["company_industry"])
 

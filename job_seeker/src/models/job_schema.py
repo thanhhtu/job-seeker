@@ -5,6 +5,8 @@ from uuid import UUID
 
 import asyncpg
 
+from src.utils.datetime_utils import now as utc_now, parse_datetime
+
 @dataclass
 class Job:
     id: UUID | None = None
@@ -47,8 +49,8 @@ class Job:
     posted_date: datetime | None = None
     crawled_date: datetime | None = None
 
-    created_at: datetime = field(default_factory=lambda: datetime.now())
-    updated_at: datetime = field(default_factory=lambda: datetime.now())
+    created_at: datetime = field(default_factory=utc_now)
+    updated_at: datetime = field(default_factory=utc_now)
     embedding: list[float] | None = field(default=None, repr=False)
 
     @classmethod
@@ -125,14 +127,7 @@ class Job:
             return date.fromisoformat(text[:10])
 
         def _datetime(val) -> datetime | None:
-            if not val:
-                return None
-            if isinstance(val, (int, float)):
-                return datetime.fromtimestamp(val / 1000)
-            text = str(val).strip()
-            if text.endswith("Z"):
-                text = text[:-1] + "+00:00"
-            return datetime.fromisoformat(text)
+            return parse_datetime(val)
 
         def _str_list(val) -> list[str]:
             if not val:
@@ -154,6 +149,7 @@ class Job:
             country=data.get("country"),
             job_level=data.get("job_level"),
             education=data.get("education"),
+            salary_raw=data.get("salary_raw"),
             salary_min=_float(data.get("salary_min")),
             salary_max=_float(data.get("salary_max")),
             salary_currency=data.get("salary_currency"),
@@ -163,6 +159,8 @@ class Job:
             locations=_str_list(data.get("locations")),
             location_raw=data.get("location_raw"),
             company_name=data.get("company_name") or "",
+            company_url=data.get("company_url"),
+            company_id=data.get("company_id"),
             company_size=data.get("company_size"),
             company_industry=_str_list(data.get("company_industry")),
             work_mode_days=data.get("work_mode_days"),

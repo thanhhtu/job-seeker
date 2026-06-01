@@ -62,12 +62,12 @@ Crawls **ITviec** & **TopCV** via [DBOS](https://docs.dbos.dev/). Output: `crawl
 **Prerequisites:** `.env` + PostgreSQL running (same as Setup).
 
 ```bash
-uv sync --group crawler         # project root
+uv sync --group crawler                  # project root
 
 cd crawler
 
-python crawler_workflow.py --ui               # scheduler (00:00 Asia/Ho_Chi_Minh) + UI at :8090
-python crawler_workflow.py --trigger          # crawl now
+python crawler_workflow.py --ui          # scheduler (00:00 Asia/Ho_Chi_Minh) + UI at :8090
+python crawler_workflow.py --trigger     # crawl now
 ```
 
 State stored in `crawler/crawler_state.sqlite`. No need to run `scripts/ingest.py` after a successful crawl.

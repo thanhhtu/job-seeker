@@ -1,12 +1,20 @@
 import random
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
 from curl_cffi import requests as cf
 from bs4 import BeautifulSoup
+
+import sys
+
+_root = Path(__file__).resolve().parents[2]
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
+
+from src.utils.datetime_utils import now
 
 SITE_URL    = "https://itviec.com"
 BASE_URL    = "https://itviec.com/it-jobs"
@@ -16,6 +24,7 @@ IMPERSONATE = "chrome124"
 WAIT_MIN = 1.5
 WAIT_MAX = 3.5
 LOG_DIR = Path("log")
+TIMESTAMP_FORMAT = "ISO8601_UTC"
 
 session = cf.Session(impersonate=IMPERSONATE)
 session.headers.update({
@@ -40,11 +49,22 @@ def extract_job_id(url: str) -> Optional[str]:
     return f"itviec-{m.group(1)}" if m else f"itviec-{slug}"
 
 
-def parse_relative_time(text: str) -> Optional[datetime]:
-    now  = datetime.now()
+def list_page_url(page_num: int) -> str:
+    if page_num <= 1:
+        return f"{BASE_URL}?sort=new"
+    return f"{BASE_URL}?sort=new&page={page_num}"
+
+
+def compute_posted_date(posted_at_text: str) -> Optional[str]:
+    dt = parse_relative_time(posted_at_text)
+    return dt.isoformat(timespec="seconds") if dt else None
+
+
+def parse_relative_time(text: str):
+    ref = now()
     text = (text or "").lower()
     if "just now" in text or "today" in text or "hôm nay" in text:
-        return now
+        return ref
     patterns = [
         (r"(\d+)\s+giây",   timedelta(seconds=1)),
         (r"(\d+)\s+phút",   timedelta(minutes=1)),
@@ -61,7 +81,7 @@ def parse_relative_time(text: str) -> Optional[datetime]:
     for pattern, delta in patterns:
         m = re.search(pattern, text)
         if m:
-            return now - int(m.group(1)) * delta
+            return ref - int(m.group(1)) * delta
     return None
 
 

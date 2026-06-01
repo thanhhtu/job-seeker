@@ -93,6 +93,7 @@ async def upsert_jobs(jobs: list[Job]) -> int:
 
     async with pool.acquire() as conn:
         await conn.execute("SET search_path TO public")
+        await conn.execute("SET TIME ZONE 'UTC'")
         await conn.executemany(query, records)
 
     logger.info(f"Upserted {len(records)} jobs")

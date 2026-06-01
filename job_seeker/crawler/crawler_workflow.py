@@ -24,10 +24,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Ensure project root is on sys.path for src/ imports
+# Ensure project root and crawler package dir are on sys.path
+_crawler_dir = str(Path(__file__).resolve().parent)
 _project_root = str(Path(__file__).resolve().parents[1])
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
+for _p in (_project_root, _crawler_dir):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 # Load .env from project root before importing src (pydantic-settings needs env vars)
 from dotenv import load_dotenv
@@ -45,9 +47,12 @@ from src.ingest.embed import _build_embed_text
 from src.models.job_schema import Job
 from src.core.config import settings
 
+from src.utils.datetime_utils import now_str
+
 from itviec import (
     get_page, wait as itv_wait,
-    LOG_DIR as ITV_LOG_DIR, BASE_URL as ITV_BASE_URL,
+    LOG_DIR as ITV_LOG_DIR,
+    list_page_url as itv_list_page_url,
     login as itv_login,
     parse_job_list, parse_job_detail,
 )
@@ -96,7 +101,7 @@ def itv_login_step():
 def itv_fetch_step() -> list:
     pages_html = []
     for page_num in range(1, ITV_MAX_PAGES + 1):
-        url = ITV_BASE_URL if page_num == 1 else f"{ITV_BASE_URL}?page={page_num}"
+        url = itv_list_page_url(page_num)
         soup = get_page(url)
         if not soup:
             itv_wait()
@@ -122,6 +127,7 @@ def itv_parse_step(pages_html: list) -> dict:
                 continue
             existing_ids.add(job_id)
             new_count += 1
+            job["crawled_date"] = now_str()
             if job.get("url"):
                 itv_wait()
                 detail_soup = get_page(job["url"])
@@ -176,6 +182,7 @@ def tcv_parse_step(pages_html: list) -> dict:
             if job_id and job_id in existing_ids:
                 continue
             existing_ids.add(job_id)
+            job["crawled_date"] = now_str()
             jobs.append(job)
             new_count += 1
             if job.get("url"):
@@ -354,6 +361,7 @@ def _upsert_jobs_sync(jobs: list[Job], dsn: str):
     conn = psycopg2.connect(dsn)
     try:
         with conn.cursor() as cur:
+            cur.execute("SET TIME ZONE 'UTC'")
             for job in jobs:
                 cur.execute(query, (
                     job.job_id, job.source, job.url, job.title,

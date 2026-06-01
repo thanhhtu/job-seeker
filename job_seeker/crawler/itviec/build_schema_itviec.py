@@ -2,44 +2,21 @@ from pathlib import Path
 
 from db import load_json, save_json
 
+from .schema_itviec import JobSchema
+
 
 def build_schema(input_path: Path) -> list[dict]:
     raw_jobs = load_json(input_path)
+    if not isinstance(raw_jobs, list):
+        raw_jobs = []
+
     result = []
-
-    for job in raw_jobs:
-        skills_raw = job.get("skills") or []
-        seen = set()
-        skills_dedup = []
-        for s in skills_raw:
-            s_clean = s.strip()
-            key = s_clean.lower()
-            if key not in seen:
-                seen.add(key)
-                skills_dedup.append(s_clean)
-
-        entry = {
-            "job_id": job.get("job_id"),
-            "title": job.get("title"),
-            "company": job.get("company"),
-            "company_id": job.get("company_id"),
-            "salary": job.get("salary"),
-            "location": job.get("location"),
-            "work_mode": job.get("work_mode"),
-            "skills": skills_dedup or None,
-            "description": job.get("description"),
-            "requirements": job.get("requirements"),
-            "benefits": job.get("benefits"),
-            "url": job.get("url"),
-            "posted_at": job.get("posted_at"),
-            "posted_date": job.get("posted_date"),
-            "crawled_date": job.get("crawled_date"),
-            "source": "itviec",
-        }
-
-        entry = {k: v for k, v in entry.items() if v is not None}
-        result.append(entry)
-
+    for data in raw_jobs:
+        try:
+            job = JobSchema(**data)
+            result.append(job.model_dump(mode="json"))
+        except Exception as e:
+            print(f"  Schema error job {data.get('job_id', 'N/A')}: {e}")
     return result
 
 

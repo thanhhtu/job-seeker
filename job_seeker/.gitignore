@@ -162,3 +162,7 @@ cython_debug/
 frontend/node_modules/
 
 *.tsbuildinfo
+
+# Crawler runtime output (local only)
+crawler/log/
+crawler/data_job/
