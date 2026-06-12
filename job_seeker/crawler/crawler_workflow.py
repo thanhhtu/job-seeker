@@ -446,17 +446,23 @@ def start_workflow() -> tuple[int, int]:
     itv_h = DBOS.start_workflow(itviec_workflow)
     tcv_h = DBOS.start_workflow(topcv_workflow)
 
-    # Process ITviec immediately (without waiting for TopCV)
-    itv_c = itv_h.get_result()
-    print(f"ITviec: {itv_c} mới")
-    itv_raw = DBOS.start_workflow(json_loader_workflow, "itviec").get_result()
-    DBOS.start_workflow(embed_and_upsert_workflow, itv_raw)
+    itv_c = 0
+    try:
+        itv_c = itv_h.get_result()
+        print(f"ITviec: {itv_c} mới")
+        itv_raw = DBOS.start_workflow(json_loader_workflow, "itviec").get_result()
+        DBOS.start_workflow(embed_and_upsert_workflow, itv_raw)
+    except Exception as e:
+        print(f"ITviec failed: {e}")
 
-    # Process TopCV after it completes
-    tcv_c = tcv_h.get_result()
-    print(f"TopCV: {tcv_c} mới")
-    tcv_raw = DBOS.start_workflow(json_loader_workflow, "topcv").get_result()
-    DBOS.start_workflow(embed_and_upsert_workflow, tcv_raw)
+    tcv_c = 0
+    try:
+        tcv_c = tcv_h.get_result()
+        print(f"TopCV: {tcv_c} mới")
+        tcv_raw = DBOS.start_workflow(json_loader_workflow, "topcv").get_result()
+        DBOS.start_workflow(embed_and_upsert_workflow, tcv_raw)
+    except Exception as e:
+        print(f"TopCV failed: {e}")
 
     return itv_c, tcv_c
 

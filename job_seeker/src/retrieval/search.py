@@ -76,7 +76,7 @@ async def _get_embedding(text: str) -> list[float]:
 
 async def bm25_search(
     parsed_query: dict,
-    top_k: int = 20,
+    top_k: int = 30,
     *,
     rewritten_query: str | None = None,
 ) -> list[Job]:
@@ -183,7 +183,7 @@ async def bm25_search(
 
 async def vector_search(
     parsed_query: dict,
-    top_k: int = 20,
+    top_k: int = 30,
     *,
     rewritten_query: str | None = None,
     conversation_summary: str | None = None,
