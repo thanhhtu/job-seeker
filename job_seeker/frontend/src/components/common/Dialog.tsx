@@ -41,7 +41,7 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/40 cursor-default"
+        className={`absolute inset-0 ${colors.basic.bgBlackOverlay} cursor-default`}
         aria-label="Close dialog"
         onClick={onClose}
       />
@@ -62,7 +62,7 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
             aria-label="Close"
             className={`p-1 rounded-full ${colors.neutral.text400} hover:${colors.neutral.text700} transition-colors cursor-pointer`}
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
         <div className="px-5 py-4">{children}</div>

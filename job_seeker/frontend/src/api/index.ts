@@ -12,4 +12,11 @@ export {
 export { sendMessage } from "./chat";
 export type { SendMessageParams, SendMessageResponse } from "./chat";
 
+export {
+  listSavedJobs,
+  saveJob,
+  updateSavedJob,
+  removeSavedJob,
+} from "./savedJobs";
+
 export { ApiError } from "./client";

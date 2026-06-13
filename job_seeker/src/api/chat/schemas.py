@@ -18,6 +18,7 @@ class JobRecommendationOut(BaseModel):
 
 
 class JobCardOut(BaseModel):
+    id: str | None = None
     title: str
     company_name: str
     locations: list[str] = []

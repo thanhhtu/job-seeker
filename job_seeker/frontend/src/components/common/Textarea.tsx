@@ -11,30 +11,25 @@ interface InputProps
 const MAX_ROWS = 5;
 
 function adjustHeight(el: HTMLTextAreaElement) {
-  // 1. Lưu lại và tắt transition tạm thời để việc set height = '1px' ăn ngay lập tức
   const originalTransition = el.style.transition;
   el.style.transition = 'none';
 
-  // 2. Thu nhỏ về 1px để tính toán lại scrollHeight từ đầu
   el.style.height = '1px';
   el.style.overflow = 'hidden';
 
-  // 3. Lấy các thông số CSS
   const style = window.getComputedStyle(el);
   const paddingTop = parseFloat(style.paddingTop) || 0;
   const paddingBottom = parseFloat(style.paddingBottom) || 0;
   
-  // Xử lý trường hợp lineHeight trả về 'normal' (có thể gây lỗi NaN)
   let lineHeight = parseFloat(style.lineHeight);
   if (isNaN(lineHeight)) {
     const fontSize = parseFloat(style.fontSize) || 16;
-    lineHeight = fontSize * 1.5; // Giá trị fallback an toàn
+    lineHeight = fontSize * 1.5; 
   }
 
   const maxHeight = lineHeight * MAX_ROWS + paddingTop + paddingBottom;
   const needed = el.scrollHeight;
 
-  // 4. Áp dụng chiều cao mới
   if (needed <= maxHeight) {
     el.style.height = `${needed}px`;
     el.style.overflow = 'hidden';
@@ -43,10 +38,8 @@ function adjustHeight(el: HTMLTextAreaElement) {
     el.style.overflow = 'auto';
   }
 
-  // 5. Force reflow: Ép trình duyệt nhận diện chiều cao mới trước khi bật lại transition
   void el.offsetHeight;
 
-  // 6. Trả lại transition ban đầu để giữ hiệu ứng animation
   el.style.transition = originalTransition;
 }
 

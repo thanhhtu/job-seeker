@@ -21,9 +21,9 @@ export function CopyButton({ copied, onCopy }: { copied: boolean; onCopy: () => 
       title="Sao chép"
     >
       {copied ? (
-        <Check className={`w-4 h-4 ${colors.status.success}`} />
+        <Check className={`w-5 h-5 ${colors.status.success}`} />
       ) : (
-        <Copy className={`w-4 h-4 ${colors.neutral.text400}`} />
+        <Copy className={`w-5 h-5 ${colors.neutral.text400}`} />
       )}
     </button>
   );

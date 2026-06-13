@@ -16,6 +16,8 @@ def _job_to_card(job: Job) -> dict:
         "title": job.title,
         "company_name": job.company_name,
     }
+    if job.id is not None:
+        card["id"] = str(job.id)
     if job.locations:
         card["locations"] = list(job.locations)
     if job.salary_min or job.salary_max:

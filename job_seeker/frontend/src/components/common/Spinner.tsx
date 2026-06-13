@@ -16,7 +16,7 @@ const ringSizeClass = {
 
 const ringColorClass = {
   light: `${colors.basic.borderWhiteSoft} ${colors.basic.borderTopWhite}`,
-  muted: `${colors.neutral.border200} border-t-[#4f46e5]`,
+  muted: `${colors.neutral.border200} ${colors.primary.borderTop}`,
 };
 
 const dotSizeClass = {

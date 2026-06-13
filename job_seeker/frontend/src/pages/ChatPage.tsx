@@ -15,6 +15,7 @@ import {
   updateSessionTitle,
 } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
+import { SavedJobsProvider } from "@/hooks/useSavedJobs";
 import { ChatMessage } from "@/types/chat";
 import { SessionSummary } from "@/types/session";
 import {
@@ -26,7 +27,7 @@ import {
 import { colors } from "@/theme/colors";
 
 export function ChatPage() {
-  const { accessToken, user, isBootstrapping, login, logout } = useAuth();
+  const { accessToken, user, isBootstrapping, login, logout, getValidAccessToken } = useAuth();
   const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const navigate = useNavigate();
   const currentSessionId = urlSessionId ?? null;
@@ -314,6 +315,11 @@ export function ChatPage() {
   }
 
   return (
+    <SavedJobsProvider
+      enabled={Boolean(accessToken)}
+      getToken={getValidAccessToken}
+      onUnauthorized={logout}
+    >
     <div className={`flex h-full w-full ${colors.page.shellBg} !p-4 md:p-4 gap-4 overflow-hidden font-sans`}>
       <div
         className={`w-[320px] shrink-0 ${colors.basic.bgWhite} rounded-[28px] border ${colors.neutral.border100} flex flex-col overflow-y-hidden overflow-x-visible`}
@@ -346,5 +352,6 @@ export function ChatPage() {
         />
       </div>
     </div>
+    </SavedJobsProvider>
   );
 }

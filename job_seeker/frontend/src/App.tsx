@@ -1,6 +1,7 @@
 import { Toaster } from "react-hot-toast";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ChatPage } from "@/pages/ChatPage";
+import { SettingsPage } from "@/pages/SettingsPage";
 import { colors } from "@/theme/colors";
 
 export default function App() {
@@ -23,6 +24,8 @@ export default function App() {
         <Routes>
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:sessionId" element={<ChatPage />} />
+          <Route path="/settings" element={<Navigate to="/settings/profile" replace />} />
+          <Route path="/settings/:section" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/chat" replace />} />
         </Routes>
       </div>

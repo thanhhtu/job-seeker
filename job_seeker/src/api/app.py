@@ -18,6 +18,7 @@ from src.api.auth.router import router as auth_router
 from src.api.errors import parse_validation_errors
 from src.api.chat.router import router as chat_router
 from src.api.openapi_meta import APP_DESCRIPTION, OPENAPI_TAGS
+from src.api.saved_jobs.router import router as saved_jobs_router
 from src.api.sessions.router import me_router, router as sessions_router
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -73,6 +74,7 @@ app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(sessions_router)
 app.include_router(me_router)
+app.include_router(saved_jobs_router)
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     _request: Request, exc: RequestValidationError

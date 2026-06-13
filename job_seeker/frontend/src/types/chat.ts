@@ -8,6 +8,7 @@ export type JobRecommendation = {
 };
 
 export type JobCard = {
+  id?: string | null;
   title: string;
   company_name: string;
   locations?: string[];

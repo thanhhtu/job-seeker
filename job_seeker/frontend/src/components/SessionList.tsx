@@ -242,7 +242,7 @@ function SessionRow({
     >
       <MessageSquareMore className={`w-5 h-5 shrink-0 ${iconClass}`} />
 
-      <span className={`flex-1 min-w-0 truncate text-[13px] leading-none ${labelClass}`}>
+      <span className={`flex-1 min-w-0 truncate text-[13px] leading-normal ${active ? "pr-20" : ""} ${labelClass}`}>
         {title}
       </span>
 
@@ -257,7 +257,7 @@ function SessionRow({
             aria-label="Rename session"
             className={`p-0.5 rounded-full transition-colors cursor-pointer ${colors.action.icon} ${colors.action.hoverEdit}`}
           >
-            <PencilLine className="w-4 h-4" />
+            <PencilLine className="w-5 h-5" />
           </button>
 
           <button
@@ -269,7 +269,7 @@ function SessionRow({
             aria-label="Delete session"
             className={`p-0.5 rounded-full transition-colors cursor-pointer ${colors.action.icon} ${colors.action.hoverDelete}`}
           >
-            <Trash className="w-4 h-4" />
+            <Trash className="w-5 h-5" />
           </button>
         </div>
       )}

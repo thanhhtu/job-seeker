@@ -15,7 +15,7 @@ export function StructuredMessage({ data }: { data: AssistantData }) {
       <div className="group flex gap-3 w-full">
         <Sparkles className={`w-6 h-6 shrink-0 mt-1 ${colors.primary.text}`} strokeWidth={2} />
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] text-[#1e293b] leading-relaxed">
+          <p className={`text-[15px] ${colors.neutral.text800} leading-relaxed`}>
             {renderInlineBold(data.message ?? "")}
           </p>
           <CopyButton copied={copied} onCopy={handleCopy} />
@@ -33,23 +33,23 @@ export function StructuredMessage({ data }: { data: AssistantData }) {
       <Sparkles className={`w-6 h-6 shrink-0 mt-1 ${colors.primary.text}`} strokeWidth={2} />
       <div className="flex-1 min-w-0 space-y-4">
         {data.match_summary && (
-          <p className="text-[15px] text-[#1e293b] leading-relaxed">
+          <p className={`text-[15px] ${colors.neutral.text800} leading-relaxed`}>
             {renderInlineBold(data.match_summary)}
           </p>
         )}
 
         {recommendations.length > 0 && (
           <div className="space-y-1.5">
-            <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-[#475569] uppercase tracking-wide">
+            <h3 className={`flex items-center gap-1.5 text-[13px] font-semibold ${colors.neutral.text600} uppercase tracking-wide`}>
               <Star className="w-3.5 h-3.5" /> Gợi ý
             </h3>
             <div className="space-y-1">
               {recommendations.map((rec) => (
-                <div key={rec.rank} className="flex items-start gap-2 text-[13px] text-[#334155]">
-                  <ChevronRight className="w-4 h-4 text-[#4f46e5] shrink-0 mt-0.5" />
+                <div key={rec.rank} className={`flex items-start gap-2 text-[13px] ${colors.neutral.text700}`}>
+                  <ChevronRight className={`w-5 h-5 ${colors.primary.text} shrink-0 mt-0.5`} />
                   <span>
                     <span className="font-semibold">{rec.title}</span>
-                    <span className="text-[#64748b]"> – {rec.company}:</span>{" "}
+                    <span className={colors.neutral.text500}> – {rec.company}:</span>{" "}
                     {renderInlineBold(rec.reason)}
                   </span>
                 </div>
@@ -60,7 +60,7 @@ export function StructuredMessage({ data }: { data: AssistantData }) {
 
         {jobs.length > 0 && (
           <div className="space-y-1.5">
-            <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-[#475569] uppercase tracking-wide">
+            <h3 className={`flex items-center gap-1.5 text-[13px] font-semibold ${colors.neutral.text600} uppercase tracking-wide`}>
               <Briefcase className="w-3.5 h-3.5" /> {jobs.length} công việc phù hợp
             </h3>
             <div className="grid gap-3">
@@ -78,7 +78,7 @@ export function StructuredMessage({ data }: { data: AssistantData }) {
               return (
                 <span
                   key={action}
-                  className="px-4 py-2 rounded-3xl bg-[#f1f5f9] text-[12px] text-[#475569] font-medium"
+                  className={`px-4 py-2 rounded-3xl ${colors.neutral.bg100} text-[12px] ${colors.neutral.text600} font-medium`}
                 >
                   {label}
                 </span>

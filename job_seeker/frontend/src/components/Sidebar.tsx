@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserInfo } from "@/types/user";
 import { SessionSummary } from "@/types/session";
 import { AuthForm } from "./AuthForm";
@@ -39,6 +40,7 @@ export function Sidebar({
   onDeleteAllSessions,
   onNewChat,
 }: Props) {
+  const navigate = useNavigate();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
@@ -117,6 +119,7 @@ export function Sidebar({
       <div className={`mx-10 pt-4 shrink-0 border-t ${colors.neutral.border100} space-y-2 pb-2`}>
         <button
           type="button"
+          onClick={() => navigate("/settings")}
           className={`w-full flex items-center gap-3 rounded-full px-4 py-3 font-semibold text-[13px] ${colors.neutral.text800} ${colors.neutral.hoverBg50} transition-colors cursor-pointer`}
         >
           <Settings className="w-5 h-5" />
@@ -140,7 +143,7 @@ export function Sidebar({
               title="Đăng xuất"
               className={`p-1.5 rounded-full transition-colors cursor-pointer ${colors.action.icon} ${colors.action.hoverDelete}`}
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         )}

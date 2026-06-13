@@ -3,7 +3,7 @@ import { toast } from "react-hot-toast";
 import { ApiError, AuthResponse, login, register } from "@/api";
 import { Button, Input } from "./common";
 import { colors } from "@/theme/colors";
-import { AuthMode } from "@/types/user";
+import { AuthMode } from "@/constant/auth";
 
 type Props = {
   onLogin: (data: AuthResponse) => void;

@@ -3,8 +3,3 @@ export type UserInfo = {
   email: string;
 };
 
-export enum AuthMode {
-  LOGIN = "login",
-  REGISTER = "register",
-}
-
