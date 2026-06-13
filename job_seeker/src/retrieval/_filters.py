@@ -125,6 +125,42 @@ _LOCATION_KEY_ALIASES: dict[str, tuple[str, ...]] = {
     "an_giang": ("an giang", "kien giang"),
 }
 
+# Vietnamese display labels for canonical location keys
+_LOCATION_LABELS: dict[str, str] = {
+    "ha_noi": "Hà Nội",
+    "tuyen_quang": "Tuyên Quang",
+    "lao_cai": "Lào Cai",
+    "thai_nguyen": "Thái Nguyên",
+    "phu_tho": "Phú Thọ",
+    "bac_ninh": "Bắc Ninh",
+    "hung_yen": "Hưng Yên",
+    "hai_phong": "Hải Phòng",
+    "ninh_binh": "Ninh Bình",
+    "quang_tri": "Quảng Trị",
+    "da_nang": "Đà Nẵng",
+    "quang_ngai": "Quảng Ngãi",
+    "gia_lai": "Gia Lai",
+    "khanh_hoa": "Khánh Hòa",
+    "lam_dong": "Lâm Đồng",
+    "dak_lak": "Đắk Lắk",
+    "ho_chi_minh": "Hồ Chí Minh",
+    "dong_nai": "Đồng Nai",
+    "tay_ninh": "Tây Ninh",
+    "can_tho": "Cần Thơ",
+    "vinh_long": "Vĩnh Long",
+    "dong_thap": "Đồng Tháp",
+    "ca_mau": "Cà Mau",
+    "an_giang": "An Giang",
+}
+
+
+def location_label(key: object) -> str:
+    text = str(key or "").strip()
+    if not text:
+        return ""
+    return _LOCATION_LABELS.get(text, text.replace("_", " ").title())
+
+
 # Normalizers
 def clean_phrases(values: object) -> list[str]:
     """Return lowercased, trimmed, non-empty phrases from a list-like value."""

@@ -7,6 +7,7 @@ from langchain_core.messages import AIMessage
 from src.agent.states.state import JobSearchState
 from src.core.logger import get_logger
 from src.models.job_schema import Job
+from src.retrieval._filters import location_label
 
 logger = get_logger(__name__)
 
@@ -19,7 +20,7 @@ def _job_to_card(job: Job) -> dict:
     if job.id is not None:
         card["id"] = str(job.id)
     if job.locations:
-        card["locations"] = list(job.locations)
+        card["locations"] = [location_label(loc) for loc in job.locations]
     if job.salary_min or job.salary_max:
         card["salary_min"] = job.salary_min
         card["salary_max"] = job.salary_max

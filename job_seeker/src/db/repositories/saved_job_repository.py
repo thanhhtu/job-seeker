@@ -6,6 +6,7 @@ from typing import Sequence
 from uuid import UUID
 
 from src.db.client import get_pool
+from src.retrieval._filters import location_label
 
 VALID_STATUSES: frozenset[str] = frozenset(
     {"saved", "applied", "interviewing", "offer", "rejected"}
@@ -67,7 +68,7 @@ def _record_from_row(row) -> SavedJobRecord:
         title=row["title"],
         company_name=row["company_name"],
         url=row["url"] or "",
-        locations=row["locations"] or [],
+        locations=[location_label(loc) for loc in (row["locations"] or [])],
         salary_min=float(row["salary_min"]) if row["salary_min"] else None,
         salary_max=float(row["salary_max"]) if row["salary_max"] else None,
         salary_currency=row["salary_currency"],
