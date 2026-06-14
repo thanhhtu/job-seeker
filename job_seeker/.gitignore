@@ -166,5 +166,7 @@ frontend/node_modules/
 # Crawler runtime output (local only)
 crawler/log/
 crawler/data_job/
+crawler/crawler_state.sqlite
+crawler/*.sqlite
 
 CLAUDE.md
