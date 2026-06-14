@@ -30,8 +30,8 @@ def wait():
 
 def page_url(page_num: int) -> str:
     if page_num == 1:
-        return BASE_URL
-    return f"{BASE_URL}?page={page_num}"
+        return f"{BASE_URL}?sort=new"
+    return f"{BASE_URL}?sort=new&page={page_num}"
 
 
 def get_page(url: str, referer: str = BASE_URL) -> Optional[BeautifulSoup]:

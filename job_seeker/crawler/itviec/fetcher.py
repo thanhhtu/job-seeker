@@ -51,8 +51,8 @@ def extract_job_id(url: str) -> Optional[str]:
 
 def list_page_url(page_num: int) -> str:
     if page_num <= 1:
-        return f"{BASE_URL}?sort=new"
-    return f"{BASE_URL}?sort=new&page={page_num}"
+        return BASE_URL
+    return f"{BASE_URL}?page={page_num}"
 
 
 def compute_posted_date(posted_at_text: str) -> Optional[str]:

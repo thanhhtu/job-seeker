@@ -70,9 +70,9 @@ ITV_EXISTING_IDS_FILE = OUTPUT_DIR / "itviec_existing_ids.json"
 TCV_EXISTING_IDS_FILE = OUTPUT_DIR / "topcv_existing_ids.json"
 
 ITV_MAX_PAGES = 1
-ITV_MAX_JOBS_PER_RUN = 1
+ITV_MAX_JOBS_PER_RUN = 20
 TCV_MAX_PAGES = 1
-TCV_MAX_JOBS_PER_RUN = 1
+TCV_MAX_JOBS_PER_RUN = 20
 
 
 def _get_output_file(site: str) -> Path:
