@@ -1,6 +1,7 @@
 export const MESSAGES_BY_CODE: Record<string, string> = {
   EMAIL_ALREADY_REGISTERED: "Email này đã được đăng ký",
   INVALID_CREDENTIALS: "Email hoặc mật khẩu không chính xác",
+  INVALID_CURRENT_PASSWORD: "Mật khẩu hiện tại không chính xác",
   REFRESH_TOKEN_EXPIRED: "Token làm mới đã hết hạn",
   INVALID_REFRESH_TOKEN: "Token làm mới không hợp lệ",
   USER_NOT_FOUND: "Tài khoản không còn tồn tại",

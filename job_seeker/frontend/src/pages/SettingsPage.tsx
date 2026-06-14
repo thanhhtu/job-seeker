@@ -1,5 +1,6 @@
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Spinner } from "@/components/common";
+import { PasswordPanel } from "@/components/PasswordPanel";
 import { ProfilePanel } from "@/components/ProfilePanel";
 import { SavedJobsPanel } from "@/components/SavedJobsPanel";
 import { SettingsSidebar } from "@/components/SettingsSidebar";
@@ -8,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { colors } from "@/theme/colors";
 
 export function SettingsPage() {
-  const { user, isBootstrapping, accessToken, logout } = useAuth();
+  const { user, isBootstrapping, accessToken, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const { section: sectionParam } = useParams<{ section: string }>();
 
@@ -68,7 +69,9 @@ export function SettingsPage() {
             </button>
           </div>
         ) : section === "profile" ? (
-          <ProfilePanel user={user} />
+          <ProfilePanel user={user} onUserUpdate={updateUser} />
+        ) : section === "password" ? (
+          <PasswordPanel />
         ) : (
           <SavedJobsPanel />
         )}

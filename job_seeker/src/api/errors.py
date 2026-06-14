@@ -10,6 +10,7 @@ from pydantic import BaseModel
 API_ERRORS: list[tuple[str, str]] = [
     ("EMAIL_ALREADY_REGISTERED", "Email already registered."),
     ("INVALID_CREDENTIALS", "Incorrect email or password."),
+    ("INVALID_CURRENT_PASSWORD", "Current password is incorrect."),
     ("REFRESH_TOKEN_EXPIRED", "Refresh token expired"),
     ("INVALID_REFRESH_TOKEN", "Invalid refresh token"),
     ("USER_NOT_FOUND", "User no longer exists"),

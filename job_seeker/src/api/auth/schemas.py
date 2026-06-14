@@ -29,6 +29,8 @@ class UserLogin(BaseModel):
 class UserPublic(BaseModel):
     id: str
     email: str
+    name: str | None = None
+    phone: str | None = None
 
 
 class TokenResponse(BaseModel):
@@ -40,3 +42,21 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1)
+
+
+class UpdateProfileRequest(BaseModel):
+    name: str | None = Field(None, max_length=120)
+    phone: str | None = Field(None, max_length=32)
+
+    @field_validator("name", "phone")
+    @classmethod
+    def blank_to_none(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        return v or None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)

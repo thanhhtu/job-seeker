@@ -95,6 +95,14 @@ export function useAuth() {
     [applyAuth]
   );
 
+  const updateUser = useCallback((next: UserInfo) => {
+    setUser(next);
+    const stored = loadAuthStorage();
+    if (stored) {
+      saveAuthStorage({ ...stored, user: next });
+    }
+  }, []);
+
   useEffect(() => {
     const stored = loadAuthStorage();
     if (!stored) {
@@ -150,6 +158,7 @@ export function useAuth() {
     isBootstrapping,
     login,
     logout,
+    updateUser,
     getValidAccessToken,
   };
 }

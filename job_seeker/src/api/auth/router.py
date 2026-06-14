@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncpg
 import jwt as pyjwt
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 
 from src.api.auth.deps import get_current_user
 from src.api.errors import ErrorCode, api_error
@@ -13,8 +13,10 @@ from src.api.auth.jwt_tokens import (
 )
 from src.api.auth.passwords import hash_password, verify_password
 from src.api.auth.schemas import (
+    ChangePasswordRequest,
     RefreshRequest,
     TokenResponse,
+    UpdateProfileRequest,
     UserLogin,
     UserPublic,
     UserRegister,
@@ -22,8 +24,11 @@ from src.api.auth.schemas import (
 from src.db.repositories.user_repository import (
     UserRecord,
     create_user,
+    get_password_hash,
     get_user_by_email,
     get_user_by_id,
+    update_password_hash,
+    update_user_profile,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -36,8 +41,12 @@ def _token_bundle(user: UserRecord) -> TokenResponse:
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=expires_in,
-        user=UserPublic(id=user.id, email=user.email),
+        user=_user_public(user),
     )
+
+
+def _user_public(user: UserRecord) -> UserPublic:
+    return UserPublic(id=user.id, email=user.email, name=user.name, phone=user.phone)
 
 
 @router.post(
@@ -126,4 +135,43 @@ async def refresh_tokens(payload: RefreshRequest) -> TokenResponse:
     description="Requires the header `Authorization: Bearer <JWT>`.",
 )
 async def auth_me(user: UserRecord = Depends(get_current_user)) -> UserPublic:
-    return UserPublic(id=user.id, email=user.email)
+    return _user_public(user)
+
+
+@router.patch(
+    "/me",
+    response_model=UserPublic,
+    summary="Update profile",
+    description="Update the current user's name and phone. Email cannot be changed.",
+)
+async def update_profile(
+    payload: UpdateProfileRequest,
+    user: UserRecord = Depends(get_current_user),
+) -> UserPublic:
+    updated = await update_user_profile(user.id, name=payload.name, phone=payload.phone)
+    if updated is None:
+        raise api_error(status.HTTP_401_UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
+    return _user_public(updated)
+
+
+@router.patch(
+    "/me/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Change password",
+    description="Change the current user's password after verifying the current one.",
+)
+async def change_password(
+    payload: ChangePasswordRequest,
+    user: UserRecord = Depends(get_current_user),
+) -> Response:
+    stored_hash = await get_password_hash(user.id)
+    if stored_hash is None:
+        raise api_error(status.HTTP_401_UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
+    if not verify_password(payload.current_password, stored_hash):
+        raise api_error(
+            status.HTTP_400_BAD_REQUEST,
+            ErrorCode.INVALID_CURRENT_PASSWORD,
+        )
+    new_hash = hash_password(payload.new_password)
+    await update_password_hash(user.id, new_hash)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

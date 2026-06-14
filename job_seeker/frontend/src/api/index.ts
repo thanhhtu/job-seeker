@@ -9,6 +9,9 @@ export {
   deleteAllSessions,
 } from "./sessions";
 
+export { updateProfile, changePassword } from "./profile";
+export type { UpdateProfilePayload } from "./profile";
+
 export { sendMessage } from "./chat";
 export type { SendMessageParams, SendMessageResponse } from "./chat";
 

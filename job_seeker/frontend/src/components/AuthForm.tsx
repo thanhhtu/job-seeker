@@ -1,9 +1,10 @@
 import { FormEvent, useState } from "react";
 import { toast } from "react-hot-toast";
 import { ApiError, AuthResponse, login, register } from "@/api";
-import { Button, Input } from "./common";
+import { Button, Input, PasswordInput } from "./common";
 import { colors } from "@/theme/colors";
 import { AuthMode } from "@/constant/auth";
+import { loginSchema, registerSchema } from "@/schemas/auth";
 
 type Props = {
   onLogin: (data: AuthResponse) => void;
@@ -17,12 +18,19 @@ export function AuthForm({ onLogin }: Props) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    const schema = mode === AuthMode.REGISTER ? registerSchema : loginSchema;
+    const result = schema.safeParse({ email, password });
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
     setLoading(true);
     try {
+      const { email: validEmail, password: validPassword } = result.data;
       const data =
         mode === "login"
-          ? await login(email, password)
-          : await register(email, password);
+          ? await login(validEmail, validPassword)
+          : await register(validEmail, validPassword);
       onLogin(data);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -41,22 +49,18 @@ export function AuthForm({ onLogin }: Props) {
         </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
         <Input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
           className="!rounded-xl"
         />
-        <Input
-          type="password"
+        <PasswordInput
           placeholder="Mật khẩu"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={mode === "register" ? 8 : 1}
           className="!rounded-xl"
         />
         <Button
