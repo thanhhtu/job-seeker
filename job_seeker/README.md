@@ -10,6 +10,7 @@ Job search agent with **LangGraph**, **Mistral AI**, **Ollama** (bge-m3), and **
 - [Setup & Run](#setup--run)
 - [Crawler](#crawler)
 - [REST API & Web Chatbot](#rest-api--web-chatbot)
+- [Public Sharing with ngrok](#public-sharing-with-ngrok)
 - [Docker](#docker)
 - [Database Migration](#database-migration)
 
@@ -96,6 +97,44 @@ npm run dev
 ```
 
 → http://localhost:5173 (API default: http://localhost:8080)
+
+---
+
+## Public Sharing with ngrok
+
+Expose the locally-running app to the internet so **anyone can access it** — using a **single** [ngrok](https://ngrok.com) tunnel (works on the free plan).
+
+**How it works:** Vite (port `5173`) serves the frontend **and** proxies `/api` → local backend (`8080`). So one ngrok tunnel on `:5173` exposes the whole app. This is already wired up in [`frontend/vite.config.ts`](frontend/vite.config.ts) (the `server.proxy` + `allowedHosts` settings) and `frontend/.env` (`VITE_API_URL=` empty → same-origin requests).
+
+### 1. One-time setup
+
+```bash
+brew install ngrok                          # macOS (or see https://ngrok.com/download)
+```
+
+Sign up (free) at https://dashboard.ngrok.com/signup, copy your authtoken from
+https://dashboard.ngrok.com/get-started/your-authtoken, then:
+
+```bash
+ngrok config add-authtoken <YOUR_TOKEN>
+```
+
+### 2. Run (3 terminals)
+
+```bash
+# Terminal 1 — backend
+uv run uvicorn src.api.app:app --reload --port 8080
+
+# Terminal 2 — frontend (restart so it picks up .env + vite proxy)
+cd frontend && npm run dev
+
+# Terminal 3 — public tunnel
+./frontend/share-ngrok.sh                   # or: ngrok http 5173
+```
+
+ngrok prints a public URL like `https://xxxx.ngrok-free.app` — **share that link**. It serves the frontend, and API calls are auto-proxied to your local backend. No second tunnel needed.
+
+> **Note:** Make sure `frontend/.env` has `VITE_API_URL=` (empty). If you set it to a fixed URL, requests bypass the proxy and other users won't be able to reach the API.
 
 ---
 
