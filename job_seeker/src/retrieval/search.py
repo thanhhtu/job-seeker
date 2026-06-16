@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from src.agent.memory.keywords import keywords_from_rewritten
 from src.core.config import settings
+from src.core.http_client import get_client
 from src.core.logger import get_logger
 from src.db.client import get_pool
 from src.models.job_schema import Job
@@ -62,16 +63,14 @@ def _build_bm25_tsquery_text(parsed_query: dict, rewritten_query: str | None) ->
 
 
 async def _get_embedding(text: str) -> list[float]:
-    import httpx
-
-    async with httpx.AsyncClient(base_url=settings.ollama_base_url, timeout=30) as client:
-        resp = await client.post(
-            "/api/embed",
-            json={"model": "bge-m3", "input": text},
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["embeddings"][0]
+    client = await get_client(settings.ollama_base_url, timeout=30)
+    resp = await client.post(
+        "/api/embed",
+        json={"model": "bge-m3", "input": text},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data["embeddings"][0]
 
 
 async def bm25_search(

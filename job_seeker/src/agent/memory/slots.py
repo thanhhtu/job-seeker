@@ -92,13 +92,15 @@ def compute_missing_slots(parsed: dict[str, Any]) -> list[str]:
     Mirrors ``ready_for_retrieval`` so the router and the clarifier agree on "is there enough signal?".
     """
     p = enrich_parsed_query_for_retrieval(parsed)
+
+    if _ready_for_retrieval_enriched(p):
+        return []
+
     has_salary_bound = p.get("salary_min") is not None or p.get("salary_max") is not None
     has_salary_currency = bool(str(p.get("salary_currency") or "").strip())
     if has_salary_bound and not has_salary_currency:
         return [MissingSlot.SALARY_CURRENCY]
 
-    if _ready_for_retrieval_enriched(p):
-        return []
     location = str(p.get("location") or "").strip()
     if location and not _has_location_with_filter(p):
         return [MissingSlot.LOCATION_NEEDS_ROLE_OR_FILTERS]

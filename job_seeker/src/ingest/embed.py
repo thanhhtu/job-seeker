@@ -1,8 +1,5 @@
-import asyncio
-import threading
-import httpx
-
 from src.core.config import settings
+from src.core.http_client import get_client
 from src.core.logger import get_logger
 from src.models.job_schema import Job
 
@@ -12,24 +9,9 @@ BGE_MODEL = "bge-m3"
 EMBED_BATCH_SIZE = 32
 OLLAMA_BASE_URL = settings.ollama_base_url
 
-_client_instance: httpx.AsyncClient | None = None
-_client_lock = threading.Lock()
-
-
-def get_http_client() -> httpx.AsyncClient:
-    global _client_instance
-    if _client_instance is None:
-        with _client_lock:
-            if _client_instance is None:
-                _client_instance = httpx.AsyncClient(
-                    base_url=OLLAMA_BASE_URL,
-                    timeout=60.0,
-                )
-    return _client_instance
-
 
 async def _embed_texts(texts: list[str] | str) -> list[list[float]]:
-    client = get_http_client()
+    client = await get_client(OLLAMA_BASE_URL, timeout=60.0)
     response = await client.post(
         "/api/embed",
         json={
@@ -90,8 +72,7 @@ async def embed_jobs(jobs: list[dict]) -> list[Job]:
 
 
 async def close_client():
-    """Call on app shutdown to close the httpx client."""
-    global _client_instance
-    if _client_instance:
-        await _client_instance.aclose()
-        _client_instance = None
+    """Call on app shutdown to close all shared httpx clients."""
+    from src.core.http_client import close_all_clients
+
+    await close_all_clients()

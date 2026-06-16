@@ -21,6 +21,7 @@ from src.api.openapi_meta import APP_DESCRIPTION, OPENAPI_TAGS
 from src.api.saved_jobs.router import router as saved_jobs_router
 from src.api.sessions.router import me_router, router as sessions_router
 from src.core.config import settings
+from src.core.http_client import close_all_clients
 from src.core.logger import get_logger
 from src.db.client import close_pool
 from src.db.langgraph_checkpoint import (
@@ -52,6 +53,7 @@ async def lifespan(app: FastAPI):
     finally:
         await pool.close()
         await close_pool()
+        await close_all_clients()
 
 
 app = FastAPI(

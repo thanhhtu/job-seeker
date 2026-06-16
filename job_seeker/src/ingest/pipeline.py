@@ -5,6 +5,7 @@ from src.ingest.json_loader import load_jobs_from_dir, load_jobs_from_file
 from src.ingest.embed import embed_jobs
 from src.db.repositories.job_repository import upsert_jobs
 from src.db.client import close_pool
+from src.core.http_client import close_all_clients
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -45,4 +46,5 @@ async def run_pipeline(data_dirs: list[Path] = DATA_DIRS) -> None:
         logger.info(f"Pipeline done. {count} jobs upserted.")
 
     finally:
+        await close_all_clients()
         await close_pool()
