@@ -31,7 +31,7 @@ def _new_turn_state(raw_query: str) -> dict:
         "clarification_prompt": "",
         "output": "",
         "rewritten_query": "",
-        "bm25_results": [],
+        "fts_results": [],
         "vector_results": [],
         "rrf_results": [],
         "reranked_results": [],

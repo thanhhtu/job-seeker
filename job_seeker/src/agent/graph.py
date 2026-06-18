@@ -51,7 +51,7 @@ def _route_understand(state: JobSearchState) -> str:
 
 def _route_search(state: JobSearchState) -> str:
     has_results = (
-        bool(state.get("bm25_results"))
+        bool(state.get("fts_results"))
         or bool(state.get("vector_results"))
     )
     return Node.RRF if has_results else Node.OUTPUT

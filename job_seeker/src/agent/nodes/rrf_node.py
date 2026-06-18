@@ -1,5 +1,5 @@
 """
-Weighted Reciprocal Rank Fusion (RRF): Combine results from BM25 and Vector search using weighted RRF.
+Weighted Reciprocal Rank Fusion (RRF): Combine results from FTS and Vector search using weighted RRF.
 
 Formula: score(d) = Σ  w_i / (k + rank_i(d))
     k = 60  (default value from the paper "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods")
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 RRF_K = 60                  # Constant from the original paper
 TOP_N = 30                  # Number of results kept after RRF to pass to reranker
-BM25_WEIGHT_BASE = 1.1
+FTS_WEIGHT_BASE = 1.1
 VECTOR_WEIGHT_BASE = 0.9
 MAX_PER_LIST = 30
 
@@ -62,9 +62,9 @@ def _resolve_weights(state: JobSearchState) -> tuple[float, float]:
     )
     has_rich_rewrite = len(rewritten.split()) >= 8
 
-    bm25_w = BM25_WEIGHT_BASE + (0.2 if has_hard_filters else 0.0)
+    fts_w = FTS_WEIGHT_BASE + (0.2 if has_hard_filters else 0.0)
     vector_w = VECTOR_WEIGHT_BASE + (0.2 if has_rich_rewrite else 0.0)
-    return bm25_w, vector_w
+    return fts_w, vector_w
 
 
 def reciprocal_rank_fusion(
@@ -92,18 +92,18 @@ def reciprocal_rank_fusion(
 
 
 def rrf_node(state: JobSearchState) -> dict:
-    bm25_results = _dedupe_jobs((state.get("bm25_results", []) or [])[:MAX_PER_LIST])
+    fts_results = _dedupe_jobs((state.get("fts_results", []) or [])[:MAX_PER_LIST])
     vector_results = _dedupe_jobs((state.get("vector_results", []) or [])[:MAX_PER_LIST])
-    bm25_weight, vector_weight = _resolve_weights(state)
+    fts_weight, vector_weight = _resolve_weights(state)
 
     logger.info(
-        f"RRF merging — BM25: {len(bm25_results)} (w={bm25_weight:.2f}), "
+        f"RRF merging — FTS: {len(fts_results)} (w={fts_weight:.2f}), "
         f"Vector: {len(vector_results)} (w={vector_weight:.2f})"
     )
 
     merged = reciprocal_rank_fusion(
         [
-            (bm25_results, bm25_weight),
+            (fts_results, fts_weight),
             (vector_results, vector_weight),
         ]
     )

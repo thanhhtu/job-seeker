@@ -18,5 +18,5 @@ class ParsedQuery(TypedDict, total=False):
     soft_preferences:           List[str]
 
     # Filled in understand_node 
-    keywords:        List[str]            # tokens cho BM25
+    keywords:        List[str]            # tokens cho FTS
     filters:         dict                 # structured filters cho vector search

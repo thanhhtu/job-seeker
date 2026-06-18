@@ -96,7 +96,7 @@ def output_node(state: JobSearchState) -> dict:
                 "missing_slots": [],
                 "clarification_prompt": "",
                 "rewritten_query": "",
-                "bm25_results": [],
+                "fts_results": [],
                 "vector_results": [],
                 "rrf_results": [],
                 "reranked_results": [],

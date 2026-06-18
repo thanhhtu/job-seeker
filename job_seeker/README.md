@@ -1,6 +1,6 @@
 # Job Seeker Agent
 
-Job search agent with **LangGraph**, **Mistral AI**, **Ollama** (bge-m3), and **PostgreSQL hybrid search** (BM25 + vector).
+Job search agent with **LangGraph**, **Mistral AI**, **Ollama** (bge-m3), and **PostgreSQL hybrid search** (full-text search + vector).
 
 ---
 
@@ -28,14 +28,14 @@ job_seeker/
 │   ├── db/            # asyncpg, repositories, checkpoints
 │   ├── ingest/        # JSON load, embed, upsert
 │   ├── models/        # Job schema
-│   └── retrieval/     # BM25 + vector search, reranker
+│   └── retrieval/     # full-text search + vector search, reranker
 ├── crawler/           # DBOS workflow (ITviec, TopCV)
 ├── docker/            # postgres, embedding, reranker
 ├── migrations/        # Alembic
 └── scripts/ingest.py
 ```
 
-**Data flow:** `crawler/` → JSON → embed → PostgreSQL → agent search (BM25 + vector → RRF → rerank → LLM response)
+**Data flow:** `crawler/` → JSON → embed → PostgreSQL → agent search (full-text search + vector → RRF → rerank → LLM response)
 
 ---
 

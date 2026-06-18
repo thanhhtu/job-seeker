@@ -4,7 +4,7 @@ import asyncio
 
 from src.agent.states.state import JobSearchState
 from src.core.logger import get_logger
-from src.retrieval.search import bm25_search, vector_search
+from src.retrieval.search import fts_search, vector_search
 
 logger = get_logger(__name__)
 
@@ -21,8 +21,8 @@ async def hybrid_search_node(state: JobSearchState) -> dict:
         rewritten[:80] if rewritten else "",
     )
 
-    bm25_result, vector_result = await asyncio.gather(
-        bm25_search(parsed_query, top_k=SEARCH_TOP_K, rewritten_query=rewritten or None),
+    fts_result, vector_result = await asyncio.gather(
+        fts_search(parsed_query, top_k=SEARCH_TOP_K, rewritten_query=rewritten or None),
         vector_search(
             parsed_query,
             top_k=SEARCH_TOP_K,
@@ -32,17 +32,17 @@ async def hybrid_search_node(state: JobSearchState) -> dict:
         return_exceptions=True,
     )
 
-    bm25_results = bm25_result if isinstance(bm25_result, list) else []
+    fts_results = fts_result if isinstance(fts_result, list) else []
     vector_results = vector_result if isinstance(vector_result, list) else []
-    if isinstance(bm25_result, Exception):
-        logger.exception("BM25 search failed", exc_info=bm25_result)
+    if isinstance(fts_result, Exception):
+        logger.exception("FTS search failed", exc_info=fts_result)
     if isinstance(vector_result, Exception):
         logger.exception("Vector search failed", exc_info=vector_result)
 
     logger.info(
-        f"Hybrid search done — BM25: {len(bm25_results)}, Vector: {len(vector_results)}"
+        f"Hybrid search done — FTS: {len(fts_results)}, Vector: {len(vector_results)}"
     )
     return {
-        "bm25_results": bm25_results,
+        "fts_results": fts_results,
         "vector_results": vector_results,
     }

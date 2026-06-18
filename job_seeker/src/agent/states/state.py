@@ -19,7 +19,7 @@ class JobSearchState(TypedDict, total=False):
     clarification_prompt: str          
     rewritten_query:      str          
 
-    bm25_results:         List[Job]
+    fts_results:          List[Job]
     vector_results:       List[Job]
     rrf_results:          List[Job]
     reranked_results:     List[Job]
