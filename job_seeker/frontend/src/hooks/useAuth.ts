@@ -8,8 +8,8 @@ import {
   saveAuthStorage,
   type StoredAuth,
 } from "@/utils/authStorage";
-import { isTokenExpired } from "@/utils/jwt";
 import { UserInfo } from "@/types/user";
+import { AUTH_LOGOUT_EVENT } from "@/constant/auth";
 
 function toStoredAuth(data: AuthResponse): StoredAuth {
   return {
@@ -40,13 +40,29 @@ export function useAuth() {
     setUser(stored.user);
   }, []);
 
-  const logout = useCallback(() => {
-    clearAuthStorage();
+  const resetAuthState = useCallback(() => {
     setAccessToken(null);
     setRefreshToken(null);
     setUser(null);
     refreshPromiseRef.current = null;
   }, []);
+
+  const logout = useCallback(() => {
+    clearAuthStorage();
+    resetAuthState();
+    // Notify every other useAuth() instance to drop its auth state too,
+    // so the whole app returns to the logged-out UI at once.
+    window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
+  }, [resetAuthState]);
+
+  useEffect(() => {
+    const onGlobalLogout = () => {
+      clearAuthStorage();
+      resetAuthState();
+    };
+    window.addEventListener(AUTH_LOGOUT_EVENT, onGlobalLogout);
+    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, onGlobalLogout);
+  }, [resetAuthState]);
 
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
     if (refreshPromiseRef.current) {
@@ -79,14 +95,8 @@ export function useAuth() {
   }, [applyAuth, logout]);
 
   const getValidAccessToken = useCallback(async (): Promise<string | null> => {
-    if (!accessToken) {
-      return null;
-    }
-    if (!isTokenExpired(accessToken)) {
-      return accessToken;
-    }
-    return refreshAccessToken();
-  }, [accessToken, refreshAccessToken]);
+    return accessToken;
+  }, [accessToken]);
 
   const login = useCallback(
     (data: AuthResponse) => {
@@ -114,7 +124,7 @@ export function useAuth() {
     setRefreshToken(stored.refreshToken || null);
     refreshTokenRef.current = stored.refreshToken || null;
 
-    if (stored.accessToken && !isTokenExpired(stored.accessToken)) {
+    if (stored.accessToken) {
       setAccessToken(stored.accessToken);
       setIsBootstrapping(false);
       return;
@@ -136,20 +146,6 @@ export function useAuth() {
     });
     return () => setAuthHandlers(null);
   }, [getValidAccessToken, refreshAccessToken]);
-
-  useEffect(() => {
-    if (!accessToken || !refreshToken) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      if (isTokenExpired(accessToken, 60)) {
-        void refreshAccessToken();
-      }
-    }, 30_000);
-
-    return () => window.clearInterval(interval);
-  }, [accessToken, refreshToken, refreshAccessToken]);
 
   return {
     accessToken,
