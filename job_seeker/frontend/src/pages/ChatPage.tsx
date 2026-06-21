@@ -33,6 +33,19 @@ export function ChatPage() {
   const currentSessionId = urlSessionId ?? null;
 
   const [guestSessionId, setGuestSessionIdState] = useState<string | null>(() => getGuestSessionId());
+  
+  const guestSessionIdRef = useRef<string | null>(getGuestSessionId());
+
+  const setGuestSessionId = useCallback((sessionId: string | null) => {
+    guestSessionIdRef.current = sessionId;
+    setGuestSessionIdState(sessionId);
+    if (sessionId) {
+      persistGuestSessionId(sessionId);
+    } else {
+      clearGuestSessionId();
+    }
+  }, []);
+
   const activeChatSessionId = accessToken ? currentSessionId : guestSessionId;
 
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
@@ -219,7 +232,7 @@ export function ChatPage() {
         ? urlSessionId && (loadedSessionId === urlSessionId || sessionKnownForUser)
           ? urlSessionId
           : null
-        : guestSessionId;
+        : guestSessionIdRef.current;
 
       const data = await sendMessage({
         message: text,
@@ -237,9 +250,8 @@ export function ChatPage() {
           navigate(`/chat/${data.session_id}`, { replace: true });
         }
         void fetchSessions();
-      } else if (data.session_id !== guestSessionId) {
-        persistGuestSessionId(data.session_id);
-        setGuestSessionIdState(data.session_id);
+      } else if (data.session_id !== guestSessionIdRef.current) {
+        setGuestSessionId(data.session_id);
       }
     } catch (err) {
       setMessages((prev) => prev.slice(0, -1));
@@ -249,8 +261,7 @@ export function ChatPage() {
         return;
       }
       if (!accessToken && err instanceof ApiError && (err.status === 403 || err.status === 404)) {
-        clearGuestSessionId();
-        setGuestSessionIdState(null);
+        setGuestSessionId(null);
       }
       if (err instanceof ApiError) {
         toast.error(err.message);
@@ -276,8 +287,8 @@ export function ChatPage() {
 
   const handleNewChat = () => {
     if (!accessToken) {
-      clearGuestSessionId();
-      setGuestSessionIdState(null);
+      
+      setGuestSessionId(null);
       setMessages([]);
     }
     navigate("/chat");
