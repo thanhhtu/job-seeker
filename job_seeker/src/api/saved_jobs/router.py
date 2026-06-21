@@ -106,6 +106,7 @@ async def update_my_saved_job(
         job_id,
         status=payload.status,
         note=payload.note,
+        note_provided="note" in payload.model_fields_set,
     )
     if not updated:
         raise api_error(404, ErrorCode.SAVED_JOB_NOT_FOUND)

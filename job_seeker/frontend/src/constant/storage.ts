@@ -2,7 +2,6 @@ export const STORAGE_KEYS = {
   token: "access_token",
   refreshToken: "refresh_token",
   user: "user",
-  sessionTitles: "session_titles",
   guestId: "guest_id",
   guestSessionId: "guest_session_id",
 } as const;

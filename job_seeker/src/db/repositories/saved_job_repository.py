@@ -192,6 +192,7 @@ async def update_saved_job(
     *,
     status: str | None = None,
     note: str | None = None,
+    note_provided: bool = False,
 ) -> bool:
     """Patch status and/or note of an existing saved job. Returns False if not found."""
     sets: list[str] = ["updated_at = now()"]
@@ -206,7 +207,7 @@ async def update_saved_job(
             f"applied_at = CASE WHEN ${idx - 1} <> 'saved' AND applied_at IS NULL "
             "THEN now() ELSE applied_at END"
         )
-    if note is not None:
+    if note_provided:
         sets.append(f"note = ${idx}")
         params.append(note)
         idx += 1
