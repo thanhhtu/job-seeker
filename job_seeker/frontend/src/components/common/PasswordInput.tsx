@@ -26,7 +26,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
           title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           className={`absolute right-3 top-[21px] -translate-y-1/2 ${colors.neutral.text400} ${colors.neutral.hoverText700} transition-colors cursor-pointer`}
         >
-          {visible ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
+          {visible ? <Eye className="w-[18px] h-[18px]" /> : <EyeOff className="w-[18px] h-[18px]" />}
         </button>
       </div>
     );
